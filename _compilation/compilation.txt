@@ -1,0 +1,5 @@
+--------------THE BUILD COMMAND FOR THE COMPILATION--------------------
+go build -o "compile.exe" _compilation/compilation.go
+
+-----------------------THE COMMAND IN TOTAL-----------------------------
+cl /W4 /EHsc /I src src\main.cpp src\uci.cpp user32.lib /link /out:uci.exe /std:c++17 /SUBSYSTEM:CONSOLE /ENTRY:wWinMainCRTStartup

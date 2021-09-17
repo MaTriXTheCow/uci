@@ -1,0 +1,6 @@
+TODO LIST:
+- 
+
+DONE:
+- Make Logger a namespace instead of class (DONE)
+- Create WindowProcess class

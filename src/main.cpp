@@ -13,5 +13,5 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, PWSTR pCmd
 
   UCI uci(hInstance, pCmdLine, nCmdShow);
 
-  return Logger::LogExit(uci.Run());
+  uci.Run()
 }

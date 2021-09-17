@@ -6,6 +6,6 @@ Board::Board() {
   Logger::Log("Board created");
 }
 
-Board::Draw() {
-  
+void Board::Draw() {
+
 }

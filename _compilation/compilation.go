@@ -16,7 +16,7 @@ func main() {
 		"/O2",
 		"/EHsc",
 		"/std:c++20",
-		"/Fo\".\\obj\\\"",
+		"/Foobj\\",
 		"/Isrc",
 		"/Isrc\\Logger",
 		"/Isrc\\Board",
@@ -35,7 +35,7 @@ func main() {
 		"user32.lib",
 		"Kernel32.lib",
 		"/link",
-		"/out:uci.exe",
+		"/out:bin\\uci.exe",
 		"/SUBSYSTEM:CONSOLE",
 		"/ENTRY:wWinMainCRTStartup",
 	)

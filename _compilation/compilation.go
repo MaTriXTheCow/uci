@@ -31,6 +31,7 @@ func main() {
 		"src\\ImageReader\\imageReader.cpp",
 		"src\\InputProcess\\inputProcess.cpp",
 		"src\\WindowProcess\\WindowProcess.cpp",
+		"src\\Board\\Piece\\piece.cpp",
 		"src\\Util\\util.cpp",
 		"user32.lib",
 		"Kernel32.lib",

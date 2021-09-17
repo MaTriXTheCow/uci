@@ -31,5 +31,5 @@ void UCI::DestroyHandler() {
 }
 
 void UCI::GameLoop() {
-  
+  board.Draw();
 }

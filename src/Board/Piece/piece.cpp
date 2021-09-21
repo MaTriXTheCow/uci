@@ -1,9 +1,9 @@
 #include <piece.h>
 
-Piece::Piece(uint8_t descriptor) {
-  this -> descriptor = descriptor;
+Piece::Piece(int desc) {
+  descriptor = desc;
 }
 
-Piece::Draw() {
-  
+void Piece::Draw() {
+
 }

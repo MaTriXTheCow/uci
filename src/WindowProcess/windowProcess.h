@@ -3,8 +3,12 @@
 
 #include <windows.h>
 #include <map>
+#include <functional>
 
 #define FRAME_PAUSE 100
+
+#define WIDTH 640
+#define HEIGHT 640
 
 enum HandlerFunctions{DESTROY, CLICK};
 
@@ -18,10 +22,14 @@ private:
   HWND hwnd;      // For creating HDC
   int nCmdShow;   // later
 
+  HDC hdcPaint;
+
+  DWORD* pBits = NULL; // Pixel array for window
+
   static inline std::map<HandlerFunctions, HandlerFunc> handlerFunctionByName;
   static void tryCallHandler(HandlerFunctions);
 
-  GameLoopFunc gameLoopCallback;
+  std::function<void()> gameLoopCallback;
 
 public:
   void Setup(HINSTANCE, PWSTR, int);
@@ -29,10 +37,12 @@ public:
   void Show();
 
   void SetHandlerFunction(HandlerFunctions, HandlerFunc);
-
-  void SetGameLoopCallback(GameLoopFunc);
+  void SetGameLoopCallback(std::function<void()>);
 
   static LRESULT CALLBACK InternalWindowProc(HWND, UINT, WPARAM, LPARAM);
+
+  void SetPixelColor(int, int, int);
+  void FillPixelsRect(int, int, int, int, int);
 };
 
 #endif

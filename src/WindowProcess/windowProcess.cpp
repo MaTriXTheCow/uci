@@ -2,17 +2,7 @@
 
 #include <Logger\logger.h>
 
-void WindowProcess::SetGameLoopCallback(GameLoopFunc f) {
-  gameLoopCallback = f;
-}
-
-void WindowProcess::SetHandlerFunction(HandlerFunctions handlerEnum, HandlerFunc f) {
-  if(handlerFunctionByName.contains(handlerEnum)) {
-    return Logger::LogError("This handler already has a function");
-  }
-
-  handlerFunctionByName.insert({handlerEnum, f});
-}
+HDC hdcMem = NULL;
 
 void WindowProcess::tryCallHandler(HandlerFunctions handlerEnum) {
   std::map<HandlerFunctions, HandlerFunc>::iterator it = handlerFunctionByName.find(handlerEnum);
@@ -20,6 +10,19 @@ void WindowProcess::tryCallHandler(HandlerFunctions handlerEnum) {
   if(it == handlerFunctionByName.end()) return;
 
   (it->second)();
+}
+
+void WindowProcess::SetGameLoopCallback(std::function<void()> f) {
+  gameLoopCallback = f;
+}
+
+
+void WindowProcess::SetHandlerFunction(HandlerFunctions handlerEnum, HandlerFunc f) {
+  if(handlerFunctionByName.contains(handlerEnum)) {
+    return Logger::LogError("This handler already has a function");
+  }
+
+  handlerFunctionByName.insert({handlerEnum, f});
 }
 
 LRESULT CALLBACK WindowProcess::InternalWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -33,10 +36,37 @@ LRESULT CALLBACK WindowProcess::InternalWindowProc(HWND hwnd, UINT uMsg, WPARAM 
 
       tryCallHandler(DESTROY);
     } break;
+
+    case WM_PAINT: {
+      PAINTSTRUCT ps;
+      BeginPaint(hwnd, &ps);
+
+      BitBlt(ps.hdc, 0, 0, WIDTH, HEIGHT, hdcMem, 0, 0, SRCCOPY);
+
+      EndPaint(hwnd, &ps);
+    } break;
   }
 
 
   return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+void WindowProcess::SetPixelColor(int y, int x, int color) {
+  int b = (color >> 0)  & 0xff;
+  int g = (color >> 8)  & 0xff;
+  int r = (color >> 16) & 0xff;
+
+  int inverseY = HEIGHT - y - 1;
+
+  pBits[(inverseY * WIDTH) + x] = RGB(r, g, b);
+}
+
+void WindowProcess::FillPixelsRect(int y0, int y1, int x0, int x1, int color) {
+  for(int i = y0; i < y1; i++) {
+    for(int j = x0; j < x1; j++) {
+      SetPixelColor(i,j,color);
+    }
+  }
 }
 
 void WindowProcess::Setup(HINSTANCE hInstance, PWSTR /*pCmdLine*/, int nCmdS) {
@@ -70,6 +100,21 @@ void WindowProcess::Setup(HINSTANCE hInstance, PWSTR /*pCmdLine*/, int nCmdS) {
       Logger::LogError("Could not create window.");
       return;
   }
+
+  BITMAPINFO bmp    = {0};
+  HBITMAP    hBmp   = NULL;
+
+  bmp.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
+  bmp.bmiHeader.biWidth       = WIDTH;
+  bmp.bmiHeader.biHeight      = HEIGHT;
+  bmp.bmiHeader.biPlanes      = 1;
+  bmp.bmiHeader.biBitCount    = 32;
+  bmp.bmiHeader.biCompression = BI_RGB;
+
+  hBmp   = CreateDIBSection(NULL, &bmp, DIB_RGB_COLORS, (void**)&pBits, NULL, 0);
+  hdcMem = CreateCompatibleDC(NULL);
+
+  SelectObject(hdcMem, hBmp);
 }
 
 void WindowProcess::Show() {
@@ -84,6 +129,8 @@ void WindowProcess::Show() {
     }
 
     gameLoopCallback();
+
+    InvalidateRect(hwnd, NULL, FALSE);
 
     Sleep(FRAME_PAUSE);
   }

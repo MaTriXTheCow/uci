@@ -1,6 +1,7 @@
 #include <uci.h>
 
 #include <windows.h>
+#include <functional>
 
 #include <Logger\logger.h>
 #include <Board\board.h>
@@ -9,11 +10,15 @@ UCI::UCI(HINSTANCE hInstance, PWSTR pCmdLine, int nCmdShow) {
   winProc.Setup(hInstance, pCmdLine, nCmdShow);
 
   // Setting up handlers
-  winProc.SetHandlerFunction(CLICK, ClickHandler);
-  winProc.SetHandlerFunction(DESTROY, DestroyHandler);
+  SetHandlerFunction(CLICK, ClickHandler);
+  SetHandlerFunction(DESTROY, DestroyHandler);
 
   // Setting up game loop
-  winProc.SetGameLoopCallback(GameLoop);
+  SetGameLoopCallback([&]() {
+    this -> GameLoop();
+  });
+
+  board.Init();
 }
 
 int UCI::Run() {
@@ -31,5 +36,5 @@ void UCI::DestroyHandler() {
 }
 
 void UCI::GameLoop() {
-  board.Draw();
+  board.Draw(winProc);
 }

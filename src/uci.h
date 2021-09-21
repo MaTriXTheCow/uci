@@ -16,10 +16,13 @@ public:
 
   int Run();
 
+  void SetHandlerFunction(HandlerFunctions, HandlerFunc);
+  void SetGameLoopCallback(std::function<void()> f);
+
   static void ClickHandler(void);
   static void DestroyHandler(void);
 
-  static void GameLoop(void);
+  void GameLoop();
 };
 
 #endif

@@ -3,12 +3,12 @@
 
 class Piece {
 private:
-  uint8_t descriptor;
+  int descriptor;
 
 public:
-  Piece(uint8_t descriptor);
+  Piece(int);
 
   void Draw();
-}
+};
 
 #endif

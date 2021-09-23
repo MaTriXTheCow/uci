@@ -23,6 +23,7 @@ func main() {
 		"/Isrc\\ImageReader",
 		"/Isrc\\InputProcess",
 		"/Isrc\\Util",
+		"/Isrc\\Util\\Bitmap",
 		"/Isrc\\WindowProcess",
 		"/Isrc\\Board\\Piece",
 		"src\\main.cpp",
@@ -34,6 +35,7 @@ func main() {
 		"src\\WindowProcess\\WindowProcess.cpp",
 		"src\\Board\\Piece\\piece.cpp",
 		"src\\Util\\util.cpp",
+		"src\\Util\\Bitmap\\bitmap.cpp",
 		"src\\uci_handlers.cpp",
 		"user32.lib",
 		"Kernel32.lib",
@@ -46,6 +48,8 @@ func main() {
 
 	cmd.Stdin = nil
 	cmd.Stdout = &out
+
+	//fmt.Println(cmd.Args) //For getting command in full
 
 	err := cmd.Run()
 

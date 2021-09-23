@@ -52,19 +52,20 @@ LRESULT CALLBACK WindowProcess::InternalWindowProc(HWND hwnd, UINT uMsg, WPARAM 
 }
 
 void WindowProcess::SetPixelColor(int y, int x, int color) {
-  int b = (color >> 0)  & 0xff;
-  int g = (color >> 8)  & 0xff;
-  int r = (color >> 16) & 0xff;
+  int r = (color)       & 0xFF;
+  int g = (color >> 8)  & 0xFF;
+  int b = (color >> 16) & 0xFF;
 
-  int inverseY = HEIGHT - y - 1;
-
-  pBits[(inverseY * WIDTH) + x] = RGB(r, g, b);
+  pBits[(y * WIDTH) + x] = RGB(r, g, b);
 }
 
-void WindowProcess::FillPixelsRect(int y0, int y1, int x0, int x1, int color) {
-  for(int i = y0; i < y1; i++) {
-    for(int j = x0; j < x1; j++) {
-      SetPixelColor(i,j,color);
+void WindowProcess::FillPixelsSquare(int y, int x, int squareMeasure, int color) {
+  int realY = (y-1) * 80;
+  int realX = (x-1) * 80;
+
+  for(int i = realY; i < realY + squareMeasure; i++) {
+    for(int j = realX; j < realX + squareMeasure; j++) {
+      SetPixelColor(i, j, color);
     }
   }
 }
@@ -79,6 +80,7 @@ void WindowProcess::Setup(HINSTANCE hInstance, PWSTR /*pCmdLine*/, int nCmdS) {
   wc.lpfnWndProc   = &WindowProcess::InternalWindowProc;
   wc.hInstance     = hInstance;
   wc.lpszClassName = CLASS_NAME;
+  wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 
   RegisterClass(&wc);
 

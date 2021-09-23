@@ -2,4 +2,4 @@
 go build -o "compile.exe" _compilation/compilation.go
 
 -----------------------THE COMMAND IN TOTAL-----------------------------
-cl /W4 /EHsc /I src src\main.cpp src\uci.cpp user32.lib /link /out:uci.exe /std:c++17 /SUBSYSTEM:CONSOLE /ENTRY:wWinMainCRTStartup
+cl /W4 /O2 /EHsc /std:c++20 /Foobj\ /Isrc /Isrc\Logger /Isrc\Board /Isrc\ImageReader /Isrc\InputProcess /Isrc\Util /Isrc\WindowProcess /Isrc\Board\Piece src\main.cpp src\uci.cpp src\Logger\logger.cpp src\Board\board.cpp src\ImageReader\imageReader.cpp src\InputProcess\inputProcess.cpp src\WindowProcess\WindowProcess.cpp src\Board\Piece\piece.cpp src\Util\util.cpp src\uci_handlers.cpp user32.lib Kernel32.lib Gdi32.lib /link /out:bin\uci.exe /SUBSYSTEM:CONSOLE /ENTRY:wWinMainCRTStartup

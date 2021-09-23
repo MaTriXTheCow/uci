@@ -10,6 +10,8 @@
 #define WIDTH 640
 #define HEIGHT 640
 
+#define SQUARE_MEASUREMENT HEIGHT/8
+
 enum HandlerFunctions{DESTROY, CLICK};
 
 typedef void (*HandlerFunc)();
@@ -42,7 +44,7 @@ public:
   static LRESULT CALLBACK InternalWindowProc(HWND, UINT, WPARAM, LPARAM);
 
   void SetPixelColor(int, int, int);
-  void FillPixelsRect(int, int, int, int, int);
+  void FillPixelsSquare(int, int, int, int);
 };
 
 #endif

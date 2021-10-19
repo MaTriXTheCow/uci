@@ -3,8 +3,8 @@
 #include <windows.h>
 #include <functional>
 
-#include <Logger\logger.h>
-#include <Board\board.h>
+#include <logger.h>
+#include <board.h>
 
 UCI::UCI(HINSTANCE hInstance, PWSTR pCmdLine, int nCmdShow) {
   winProc.Setup(hInstance, pCmdLine, nCmdShow);
@@ -18,7 +18,7 @@ UCI::UCI(HINSTANCE hInstance, PWSTR pCmdLine, int nCmdShow) {
     this -> GameLoop();
   });
 
-  board.Init();
+  board.Init("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBKR b KQkq - 1 2");
 }
 
 int UCI::Run() {

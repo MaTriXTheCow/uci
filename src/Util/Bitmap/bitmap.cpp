@@ -1,5 +1,9 @@
 #include <bitmap.h>
 
+Bitmap::Bitmap() {
+  bits = 0;
+}
+
 Bitmap::Bitmap(uint64_t n) {
   bits = n;
 }

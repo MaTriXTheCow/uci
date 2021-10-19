@@ -1,6 +1,7 @@
 #include <windowProcess.h>
 
-#include <Logger\logger.h>
+#include <constants.h>
+#include <logger.h>
 
 HDC hdcMem = NULL;
 
@@ -63,8 +64,28 @@ void WindowProcess::FillPixelsSquare(int y, int x, int squareMeasure, int color)
   int realY = (y-1) * 80;
   int realX = (x-1) * 80;
 
+
   for(int i = realY; i < realY + squareMeasure; i++) {
     for(int j = realX; j < realX + squareMeasure; j++) {
+      SetPixelColor(i, j, color);
+    }
+  }
+}
+
+void WindowProcess::DrawImageSquare(int y, int x, Image* img) {
+  int realY = (y - 1) * 80;
+  int realX = (x - 1) * 80;
+
+  for (int i = realY; i < realY + (img -> width); i++) {
+    for (int j = realX; j < realX + (img -> height); j++) {
+      int color = img -> GetPixelAt(i-realY,j-realX);
+
+      if (Image::IsTransparent(color)) {
+        SetPixelColor(i, j, (y+x)%2 ? WHITE_SQUARE_COLOR : BLACK_SQUARE_COLOR);
+
+        continue;
+      }
+
       SetPixelColor(i, j, color);
     }
   }

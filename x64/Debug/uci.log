@@ -1,0 +1,4 @@
+﻿  board.cpp
+C:\Users\Elev2\Documents\uci\src\board\board.cpp(129,55): warning C4244: 'argument': conversion from 'int' to 'uint8_t', possible loss of data
+C:\Users\Elev2\Documents\uci\src\board\board.cpp(129,49): warning C4244: 'argument': conversion from 'int' to 'uint8_t', possible loss of data
+  uci.vcxproj -> C:\Users\Elev2\Documents\uci\x64\Debug\uci.exe

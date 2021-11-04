@@ -3,22 +3,26 @@
 #include <windows.h>
 #include <functional>
 
+#include <iostream>
+#include <string>
+
 #include <logger.h>
 #include <board.h>
+#include <constants.h>
 
 UCI::UCI(HINSTANCE hInstance, PWSTR pCmdLine, int nCmdShow) {
   winProc.Setup(hInstance, pCmdLine, nCmdShow);
 
   // Setting up handlers
-  SetHandlerFunction(CLICK, ClickHandler);
-  SetHandlerFunction(DESTROY, DestroyHandler);
+  SETHANDLERFUNCTION(CLICK, ClickHandler);
+  SETHANDLERFUNCTION(DESTROY, DestroyHandler);
 
   // Setting up game loop
   SetGameLoopCallback([&]() {
     this -> GameLoop();
   });
 
-  board.Init("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBKR b KQkq - 1 2");
+  board.Init("rnbqkbnr/pppppppp/8/8/3pP3/8/PPPPPPPP/RBNQKNBR b KQkq - 1 2");
 }
 
 int UCI::Run() {
@@ -28,7 +32,18 @@ int UCI::Run() {
 }
 
 void UCI::ClickHandler() {
-  Logger::Log("Clicked.");
+  int file = WindowProcess::GetXClick()/SQUARE_MEASUREMENT + 1;
+  int rank = (HEIGHT - WindowProcess::GetYClick())/SQUARE_MEASUREMENT + 1;
+
+  board.ClearHighlight();
+
+  if (board.HasPieceAt(rank, file)) {
+    board.SetHighlight(rank, file);
+
+    Bitmap* moves = board.GetLegalMoves(board.PieceAt(file, rank));
+
+    board.SetHighlight(moves);
+  }
 }
 
 void UCI::DestroyHandler() {

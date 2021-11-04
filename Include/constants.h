@@ -1,10 +1,10 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#define BOARD_SQUARE_WIDTH  8
-#define BOARD_SQUARE_HEIGHT 8
+constexpr auto BOARD_SQUARE_WIDTH = 8;
+constexpr auto BOARD_SQUARE_HEIGHT = 8;
 
-#define WHITE_SQUARE_COLOR 0xEBECD0
-#define BLACK_SQUARE_COLOR 0x779556
+constexpr auto WHITE_SQUARE_COLOR = 0xEBECD0;
+constexpr auto BLACK_SQUARE_COLOR = 0x779556;
 
 #endif // !CONSTANTS_H

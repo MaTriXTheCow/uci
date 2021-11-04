@@ -15,12 +15,32 @@ Piece::Piece(uint8_t desc, uint8_t rnk, uint8_t fle, ImageReader* reader) {
   pieceImg = reader -> ReadImage("src/Images/" + p.piece  + "_" + p.color + ".ppm");
 }
 
+int Piece::Rank() {
+  return rank;
+}
+
+int Piece::File() {
+  return file;
+}
+
+Move Piece::MoveTo(int rankTo, int fileTo) {
+  return Move(rank, file, rankTo, fileTo);
+}
+
+Move Piece::MoveTo(int rankTo, int fileTo, bool isCapture) {
+  return Move(rank, file, rankTo, fileTo, isCapture);
+}
+
+Move Piece::MoveTo(int rankTo, int fileTo, bool isCapture, bool isEnPassant, bool isPawnDouble) {
+  return Move(rank, file, rankTo, fileTo, isCapture, isEnPassant, isPawnDouble);
+}
+
 bool Piece::Is(uint8_t t) {
   return descriptor & t;
 }
 
-void Piece::Draw(WindowProcess winProc) {
-  winProc.DrawImageSquare(rank, file, pieceImg);
+void Piece::Draw(WindowProcess winProc, int background) {
+  winProc.DrawImageSquare(rank, file, pieceImg, background);
 }
 
 PieceName Piece::GetTypeAsString() {

@@ -96,3 +96,15 @@ bool Util::StringEndsWith(std::string s, std::string ending) {
 
 	return true;
 }
+
+std::string Util::RankFileToString(int rank, int file) {
+	char fileC = (char)('a' + (rank - 1));
+	char rankC = (char)('0' + (file - 1));
+
+	std::string ret;
+
+	ret += fileC;
+	ret += rankC;
+
+	return ret;
+};

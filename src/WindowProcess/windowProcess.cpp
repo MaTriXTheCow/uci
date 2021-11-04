@@ -2,8 +2,12 @@
 
 #include <constants.h>
 #include <logger.h>
+#include <windowsx.h>
 
 HDC hdcMem = NULL;
+
+int WindowProcess::lastXClick;
+int WindowProcess::lastYClick;
 
 void WindowProcess::tryCallHandler(HandlerFunctions handlerEnum) {
   std::map<HandlerFunctions, HandlerFunc>::iterator it = handlerFunctionByName.find(handlerEnum);
@@ -29,6 +33,9 @@ void WindowProcess::SetHandlerFunction(HandlerFunctions handlerEnum, HandlerFunc
 LRESULT CALLBACK WindowProcess::InternalWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
   switch(uMsg) {
     case WM_LBUTTONUP: {
+      lastXClick = GET_X_LPARAM(lParam);
+      lastYClick = GET_Y_LPARAM(lParam);
+
       tryCallHandler(CLICK);
     } break;
 
@@ -72,7 +79,7 @@ void WindowProcess::FillPixelsSquare(int y, int x, int squareMeasure, int color)
   }
 }
 
-void WindowProcess::DrawImageSquare(int y, int x, Image* img) {
+void WindowProcess::DrawImageSquare(int y, int x, Image* img, int background) {
   int realY = (y - 1) * 80;
   int realX = (x - 1) * 80;
 
@@ -81,7 +88,7 @@ void WindowProcess::DrawImageSquare(int y, int x, Image* img) {
       int color = img -> GetPixelAt(i-realY,j-realX);
 
       if (Image::IsTransparent(color)) {
-        SetPixelColor(i, j, (y+x)%2 ? WHITE_SQUARE_COLOR : BLACK_SQUARE_COLOR);
+        SetPixelColor(i, j, background);
 
         continue;
       }
@@ -157,4 +164,12 @@ void WindowProcess::Show() {
 
     Sleep(FRAME_PAUSE);
   }
+}
+
+int WindowProcess::GetXClick() {
+  return lastXClick;
+}
+
+int WindowProcess::GetYClick() {
+  return lastYClick;
 }

@@ -23,3 +23,11 @@ void Bitmap::SetAll(uint64_t n) {
 
   bits |= n;
 }
+
+void Bitmap::And(Bitmap* b) {
+  bits &= b->bits;
+}
+
+void Bitmap::Clear() {
+  bits = 0;
+}

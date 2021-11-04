@@ -6,6 +6,7 @@
 #include <image.h>
 #include <imageReader.h>
 #include <pieceName.h>
+#include <pieceMoves.h>
 
 constexpr auto WHITE_PIECE = 1;
 constexpr auto BLACK_PIECE = 0;
@@ -26,16 +27,21 @@ private:
   Image* pieceImg;
 
 public:
-  Piece();
-
   Piece(uint8_t, uint8_t, uint8_t, ImageReader*);
 
   bool Is(uint8_t);
   PieceName GetTypeAsString();
 
-  void Draw(WindowProcess);
+  void Draw(WindowProcess, int);
 
   static uint8_t GetPieceTypeFromChar(char c);
+
+  Move MoveTo(int, int);
+  Move MoveTo(int, int, bool);
+  Move MoveTo(int, int, bool, bool, bool);
+
+  int Rank();
+  int File();
 };
 
 #endif

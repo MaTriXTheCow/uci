@@ -6,6 +6,10 @@
 #include <board.h>
 #include <windowProcess.h>
 
+// Absolutely SICK macro
+
+#define SETHANDLERFUNCTION(enm,fnc) SetHandlerFunction(enm,[=,this](){this->fnc();})
+
 class UCI {
 private:
   Board board;
@@ -16,10 +20,11 @@ public:
 
   int Run();
 
-  void SetHandlerFunction(HandlerFunctions, HandlerFunc);
   void SetGameLoopCallback(std::function<void()> f);
 
-  static void ClickHandler(void);
+  void SetHandlerFunction(HandlerFunctions handlerEnum, std::function<void()> f);
+
+  void ClickHandler(void);
   static void DestroyHandler(void);
 
   void GameLoop();

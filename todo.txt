@@ -1,6 +1,4 @@
 TODO LIST:
-- 
-
-DONE:
-- Make Logger a namespace instead of class (DONE)
-- Create WindowProcess class
+- Clean up ImageReader::ReadImage function
+- Make en-passant a thing
+- Sliding pieces nice stuff

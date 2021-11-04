@@ -6,16 +6,16 @@
 #include <functional>
 #include <image.h>
 
-#define FRAME_PAUSE 100
+constexpr auto FRAME_PAUSE = 100;
 
-#define WIDTH 640
-#define HEIGHT 640
+constexpr auto WIDTH = 640;
+constexpr auto HEIGHT = 640;
 
-#define SQUARE_MEASUREMENT HEIGHT/8
+constexpr auto SQUARE_MEASUREMENT = HEIGHT/8;
 
 enum HandlerFunctions{DESTROY, CLICK};
 
-typedef void (*HandlerFunc)();
+typedef std::function<void()> HandlerFunc;
 typedef void (*GameLoopFunc)();
 
 class WindowProcess {
@@ -34,9 +34,11 @@ private:
 
   std::function<void()> gameLoopCallback;
 
+  static int lastXClick;
+  static int lastYClick;
+
 public:
-  void Setup(HINSTANCE, PWSTR, int);
-  void SetUpdateHandler();
+  void Setup(HINSTANCE, PWSTR, int);;
   void Show();
 
   void SetHandlerFunction(HandlerFunctions, HandlerFunc);
@@ -46,7 +48,10 @@ public:
 
   void SetPixelColor(int, int, int);
   void FillPixelsSquare(int, int, int, int);
-  void DrawImageSquare(int, int, Image*);
+  void DrawImageSquare(int, int, Image*, int);
+
+  static int GetXClick();
+  static int GetYClick();
 };
 
 #endif

@@ -13,6 +13,8 @@ namespace Util {
 	bool StringEndsWith(std::string, std::string);
 
 	int RGBToHexInt(int, int, int);
+
+	std::string RankFileToString(int, int);
 }
 
 #endif

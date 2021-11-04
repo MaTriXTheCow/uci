@@ -15,6 +15,10 @@ public:
 
   void SetAll(uint64_t);
   void Set(unsigned int);
+
+  void And(Bitmap*);
+
+  void Clear();
 };
 
 #endif

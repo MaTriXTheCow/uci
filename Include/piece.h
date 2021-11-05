@@ -6,7 +6,6 @@
 #include <image.h>
 #include <imageReader.h>
 #include <pieceName.h>
-#include <pieceMoves.h>
 
 constexpr auto WHITE_PIECE = 1;
 constexpr auto BLACK_PIECE = 0;
@@ -35,10 +34,6 @@ public:
   void Draw(WindowProcess, int);
 
   static uint8_t GetPieceTypeFromChar(char c);
-
-  Move MoveTo(int, int);
-  Move MoveTo(int, int, bool);
-  Move MoveTo(int, int, bool, bool, bool);
 
   int Rank();
   int File();

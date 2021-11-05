@@ -15,6 +15,9 @@ namespace Util {
 	int RGBToHexInt(int, int, int);
 
 	std::string RankFileToString(int, int);
+	void RankFileFromString(std::string, int*, int*);
+
+	int OffsetFromRF(int, int);
 }
 
 #endif

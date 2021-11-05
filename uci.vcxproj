@@ -109,13 +109,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\board\board.cpp" />
-    <ClCompile Include="src\Board\legalMoves.cpp" />
     <ClCompile Include="src\board\piece\piece.cpp" />
     <ClCompile Include="src\imagereader\imageReader.cpp" />
     <ClCompile Include="src\logger\logger.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\Move\move.cpp" />
-    <ClCompile Include="src\PieceMoves\pieceMoves.cpp" />
     <ClCompile Include="src\uci.cpp" />
     <ClCompile Include="src\uci_handlers.cpp" />
     <ClCompile Include="src\Util\BitmapCollection\bitmapCollection.cpp" />
@@ -133,13 +130,25 @@
     <ClInclude Include="Include\imageReader.h" />
     <ClInclude Include="Include\logger.h" />
     <ClInclude Include="Include\loggerDef.h" />
-    <ClInclude Include="Include\move.h" />
     <ClInclude Include="Include\piece.h" />
-    <ClInclude Include="Include\pieceMoves.h" />
     <ClInclude Include="Include\pixel.h" />
     <ClInclude Include="Include\uci.h" />
     <ClInclude Include="Include\util.h" />
     <ClInclude Include="Include\windowProcess.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Images\bishop_black.ppm" />
+    <None Include="Images\bishop_white.ppm" />
+    <None Include="Images\king_black.ppm" />
+    <None Include="Images\king_white.ppm" />
+    <None Include="Images\knight_black.ppm" />
+    <None Include="Images\knight_white.ppm" />
+    <None Include="Images\pawn_black.ppm" />
+    <None Include="Images\pawn_white.ppm" />
+    <None Include="Images\queen_black.ppm" />
+    <None Include="Images\queen_white.ppm" />
+    <None Include="Images\rook_black.ppm" />
+    <None Include="Images\rook_white.ppm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -9,15 +9,22 @@
 #include <constants.h>
 #include <unordered_map>
 
+static BitmapCollection PAWN_MOVES[64];
+static BitmapCollection PAWN_CAPTURES[64];
+static BitmapCollection PAWN_DOUBLE_MOVES[64];
+
 class Board {
 private:
   BitmapCollection pieces;
 
+  Bitmap enPassantPawns;
   Bitmap highlighted;
 
   std::unordered_map<std::string, BitmapCollection> piecesMap;
 
   Piece* pieceAt[8][8];
+
+  unsigned int turn;
 
 public:
   Board();
@@ -48,6 +55,8 @@ public:
   void GetKnightMoves(Piece*, Bitmap*);
   void GetQueenMoves(Piece*, Bitmap*);
   void GetKingMoves(Piece*, Bitmap*);
+
+  void GenerateMoveBitmaps();
 };
 
 #endif

@@ -12,7 +12,7 @@ Piece::Piece(uint8_t desc, uint8_t rnk, uint8_t fle, ImageReader* reader) {
 
   PieceName p = GetTypeAsString();
 
-  pieceImg = reader -> ReadImage("src/Images/" + p.piece  + "_" + p.color + ".ppm");
+  pieceImg = reader -> ReadImage("Images\\" + p.piece  + "_" + p.color + ".ppm");
 }
 
 int Piece::Rank() {
@@ -21,18 +21,6 @@ int Piece::Rank() {
 
 int Piece::File() {
   return file;
-}
-
-Move Piece::MoveTo(int rankTo, int fileTo) {
-  return Move(rank, file, rankTo, fileTo);
-}
-
-Move Piece::MoveTo(int rankTo, int fileTo, bool isCapture) {
-  return Move(rank, file, rankTo, fileTo, isCapture);
-}
-
-Move Piece::MoveTo(int rankTo, int fileTo, bool isCapture, bool isEnPassant, bool isPawnDouble) {
-  return Move(rank, file, rankTo, fileTo, isCapture, isEnPassant, isPawnDouble);
 }
 
 bool Piece::Is(uint8_t t) {

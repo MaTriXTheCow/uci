@@ -23,3 +23,19 @@ bool BitmapCollection::Has(uint64_t offset) {
 		
 	return false;
 }
+
+void BitmapCollection::Set(uint64_t offset) {
+	for (auto& pair : bitmaps) {
+		pair.second.Set(offset);
+	}
+}
+
+Bitmap& BitmapCollection::All() {
+	Bitmap b = Bitmap();
+
+	for (auto& pair : bitmaps) {
+		b.OrPlace(pair.second);
+	}
+
+	return b;
+}

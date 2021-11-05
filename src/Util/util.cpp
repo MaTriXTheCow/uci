@@ -1,6 +1,8 @@
 #include <util.h>
 #include <logger.h>
 
+#include <constants.h>
+
 void Util::FENParts(std::string &pieces, std::string &turnColor, std::string &canCastle, std::string &enPassantTargetSquare, std::string &halfMove, std::string &fullMove, std::string fen) {
 	int stringStartIndex = 0;
 	int stringLen = 0;
@@ -108,3 +110,12 @@ std::string Util::RankFileToString(int rank, int file) {
 
 	return ret;
 };
+
+int Util::OffsetFromRF(int rank, int file) {
+	return (rank - 1) * BOARD_SQUARE_WIDTH + (file - 1);
+}
+
+void Util::RankFileFromString(std::string s, int* rank, int* file) {
+	*file = (int)(s[0] - 96);
+	*rank = (int)(s[1] - 48);
+}

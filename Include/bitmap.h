@@ -11,12 +11,33 @@ public:
   Bitmap();
   Bitmap(uint64_t);
 
+  bool IsEmpty();
+
   bool Has(unsigned int);
 
   void SetAll(uint64_t);
-  void Set(unsigned int);
 
-  void And(Bitmap*);
+  void Set(unsigned int);
+  void Set(Bitmap);
+  void Set(Bitmap*);
+
+  void AndPlace(Bitmap*);
+  void AndPlace(Bitmap);
+  void AndPlace(uint64_t);
+
+  void OrPlace(Bitmap*);
+  void OrPlace(Bitmap);
+  void OrPlace(uint64_t);
+
+  Bitmap Or(Bitmap*);
+  Bitmap Or(Bitmap);
+  Bitmap Or(uint64_t);
+
+  Bitmap And(Bitmap*);
+  Bitmap And(Bitmap);
+
+  Bitmap Inverse();
+  void InversePlace();
 
   void Clear();
 };

@@ -54,15 +54,6 @@
     <ClCompile Include="src\Util\BitmapCollection\bitmapCollection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Move\move.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\PieceMoves\pieceMoves.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Board\legalMoves.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\logger.h">
@@ -101,11 +92,19 @@
     <ClInclude Include="Include\util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\move.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\pieceMoves.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Images\rook_black.ppm" />
+    <None Include="Images\rook_white.ppm" />
+    <None Include="Images\queen_white.ppm" />
+    <None Include="Images\queen_black.ppm" />
+    <None Include="Images\pawn_white.ppm" />
+    <None Include="Images\pawn_black.ppm" />
+    <None Include="Images\knight_white.ppm" />
+    <None Include="Images\knight_black.ppm" />
+    <None Include="Images\king_white.ppm" />
+    <None Include="Images\king_black.ppm" />
+    <None Include="Images\bishop_white.ppm" />
+    <None Include="Images\bishop_black.ppm" />
   </ItemGroup>
 </Project>

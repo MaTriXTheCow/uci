@@ -1,4 +1,15 @@
-﻿  board.cpp
-C:\Users\Elev2\Documents\uci\src\board\board.cpp(129,55): warning C4244: 'argument': conversion from 'int' to 'uint8_t', possible loss of data
-C:\Users\Elev2\Documents\uci\src\board\board.cpp(129,49): warning C4244: 'argument': conversion from 'int' to 'uint8_t', possible loss of data
-  uci.vcxproj -> C:\Users\Elev2\Documents\uci\x64\Debug\uci.exe
+﻿  bitmapCollection.cpp
+C:\Users\alexa\OneDrive\Documents\uci\src\Util\BitmapCollection\bitmapCollection.cpp(19,23): warning C4244: 'argument': conversion from 'uint64_t' to 'unsigned int', possible loss of data
+C:\Users\alexa\OneDrive\Documents\uci\src\Util\BitmapCollection\bitmapCollection.cpp(29,19): warning C4244: 'argument': conversion from 'uint64_t' to 'unsigned int', possible loss of data
+  board.cpp
+C:\Users\alexa\OneDrive\Documents\uci\src\board\board.cpp(206,55): warning C4244: 'argument': conversion from 'int' to 'uint8_t', possible loss of data
+C:\Users\alexa\OneDrive\Documents\uci\src\board\board.cpp(206,49): warning C4244: 'argument': conversion from 'int' to 'uint8_t', possible loss of data
+  main.cpp
+  uci.cpp
+  uci_handlers.cpp
+  bitmap.cpp
+C:\Users\alexa\OneDrive\Documents\uci\src\util\bitmap\bitmap.cpp(26,9): warning C4244: 'initializing': conversion from 'uint64_t' to 'int', possible loss of data
+C:\Users\alexa\OneDrive\Documents\uci\src\util\bitmap\bitmap.cpp(34,9): warning C4244: 'initializing': conversion from 'uint64_t' to 'int', possible loss of data
+  Generating Code...
+C:\Users\alexa\OneDrive\Documents\uci\src\Util\BitmapCollection\bitmapCollection.cpp(40): warning C4172: returning address of local variable or temporary: b
+  uci.vcxproj -> C:\Users\alexa\OneDrive\Documents\uci\x64\Debug\uci.exe

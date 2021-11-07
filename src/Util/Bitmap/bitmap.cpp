@@ -8,6 +8,10 @@ Bitmap::Bitmap(uint64_t n) {
   bits = n;
 }
 
+uint64_t Bitmap::Bits() {
+  return bits;
+}
+
 bool Bitmap::IsEmpty() {
   return bits == 0;
 }
@@ -99,4 +103,8 @@ void Bitmap::InversePlace() {
 
 void Bitmap::Clear() {
   bits = 0;
+}
+
+void Bitmap::Clear(unsigned int offset) {
+  bits &= ~(1ULL << offset);
 }

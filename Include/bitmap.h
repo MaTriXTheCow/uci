@@ -11,6 +11,8 @@ public:
   Bitmap();
   Bitmap(uint64_t);
 
+  uint64_t Bits();
+
   bool IsEmpty();
 
   bool Has(unsigned int);
@@ -40,6 +42,7 @@ public:
   void InversePlace();
 
   void Clear();
+  void Clear(unsigned int);
 };
 
 #endif

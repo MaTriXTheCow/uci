@@ -13,6 +13,13 @@ static BitmapCollection PAWN_MOVES[64];
 static BitmapCollection PAWN_CAPTURES[64];
 static BitmapCollection PAWN_DOUBLE_MOVES[64];
 
+static Bitmap KNIGHT_MOVES[64];
+
+static BitmapCollection FILE_OCCUPANCY[64];
+static BitmapCollection RANK_OCCUPANCY[64];
+static BitmapCollection DIAGONAL_OCCUPANCY[64];
+static BitmapCollection ANTIDIAGONAL_OCCUPANCY[64];
+
 class Board {
 private:
   BitmapCollection pieces;
@@ -26,6 +33,12 @@ private:
 
   unsigned int turn;
 
+  bool hasSelected;
+  Piece* selectedPiece;
+
+  Bitmap cachedLegalMoves[64];
+  bool hasLegalMovesCacheFor[64];
+
 public:
   Board();
 
@@ -38,6 +51,12 @@ public:
   void SetHighlight(Bitmap*);
   void SetHighlight(int, int);
   void ClearHighlight();
+
+  bool HasSelection();
+  void SelectPieceAt(int, int);
+  void Deselect();
+
+  Piece* SelectedPiece();
 
   void SetPieceAt(int, int, uint8_t, ImageReader*);
   bool HasPieceAt(int, int);
@@ -56,7 +75,15 @@ public:
   void GetQueenMoves(Piece*, Bitmap*);
   void GetKingMoves(Piece*, Bitmap*);
 
+  void MakeMove(Piece*, int, int);
+
+  Bitmap LineAttacks(BitmapCollection*);
+
   void GenerateMoveBitmaps();
+
+  unsigned int Turn();
+
+  bool IsTurn(Piece*);
 };
 
 #endif

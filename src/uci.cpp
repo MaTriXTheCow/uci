@@ -9,6 +9,7 @@
 #include <logger.h>
 #include <board.h>
 #include <constants.h>
+#include <util.h>
 
 UCI::UCI(HINSTANCE hInstance, PWSTR pCmdLine, int nCmdShow) {
   winProc.Setup(hInstance, pCmdLine, nCmdShow);
@@ -22,7 +23,7 @@ UCI::UCI(HINSTANCE hInstance, PWSTR pCmdLine, int nCmdShow) {
     this -> GameLoop();
   });
 
-  board.Init("rnbqkbnr/ppp1pppp/8/8/3pPP2/6P1/PPPP3P/RNBQKBNR w KQkq e3 0 2");
+  board.Init("4q3/8/8/8/8/8/8/4Q3 w KQkq - 0 1");
 }
 
 int UCI::Run() {
@@ -37,12 +38,29 @@ void UCI::ClickHandler() {
 
   board.ClearHighlight();
 
-  if (board.HasPieceAt(rank, file)) {
-    board.SetHighlight(rank, file);
+  if (!board.HasSelection()) {
+    if (board.HasPieceAt(rank, file) && board.IsTurn(board.PieceAt(file, rank))) {
+      board.SelectPieceAt(rank, file);
 
-    Bitmap* moves = board.GetLegalMoves(board.PieceAt(file, rank));
+      Bitmap* moves = board.GetLegalMoves(board.PieceAt(file, rank));
 
-    board.SetHighlight(moves);
+      board.SetHighlight(moves);
+    }
+  } else {
+    // Check move legality
+    Bitmap* moves = board.GetLegalMoves(board.SelectedPiece());
+
+    unsigned int offset = Util::OffsetFromRF(rank, file);
+
+    if (!moves->Has(offset)) {
+      board.Deselect();
+
+      return;
+    }
+
+    board.MakeMove(board.SelectedPiece(), rank, file);
+
+    board.Deselect();
   }
 }
 

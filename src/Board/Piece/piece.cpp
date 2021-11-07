@@ -23,6 +23,14 @@ int Piece::File() {
   return file;
 }
 
+void Piece::Rank(int rnk) {
+  rank = rnk;
+}
+
+void Piece::File(int fle) {
+  file = fle;
+}
+
 bool Piece::Is(uint8_t t) {
   return descriptor & t;
 }

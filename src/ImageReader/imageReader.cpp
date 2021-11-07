@@ -15,7 +15,7 @@ Image* ImageReader::ReadImage(std::string path) {
 	Image* img = new Image();
 
 	FILE* fp;
-	errno_t err = fopen_s(&fp, path.c_str(), "rb");
+	fopen_s(&fp, path.c_str(), "rb");
 
 	int row = 0;
 	int col = 0;

@@ -37,6 +37,8 @@ public:
 
   int Rank();
   int File();
+  void Rank(int);
+  void File(int);
 };
 
 #endif

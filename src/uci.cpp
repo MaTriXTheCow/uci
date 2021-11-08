@@ -23,7 +23,7 @@ UCI::UCI(HINSTANCE hInstance, PWSTR pCmdLine, int nCmdShow) {
     this -> GameLoop();
   });
 
-  board.Init("4q3/8/8/8/8/8/8/4Q3 w KQkq - 0 1");
+  board.Init("rnbqkbnr/pppppppp/8/8/8/8/PP1PPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
 int UCI::Run() {

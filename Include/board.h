@@ -8,6 +8,7 @@
 #include <piece.h>
 #include <constants.h>
 #include <unordered_map>
+#include <pieceName.h>
 
 static BitmapCollection PAWN_MOVES[64];
 static BitmapCollection PAWN_CAPTURES[64];

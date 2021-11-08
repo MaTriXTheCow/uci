@@ -138,7 +138,7 @@ void Board::GenerateMoveBitmaps() {
       }
       
 
-      // PAWN CAPUTRES
+      // PAWN CAPTURES
 
       if (file != 0) {
         PAWN_CAPTURES[offset]["white"].Set(offset + 7);
@@ -458,8 +458,10 @@ Piece* Board::SelectedPiece() {
 
 void Board::MakeMove(Piece* p, int rank, int file) {
   // Check if is capture, update turn, update cache lists
-
-  // TODO: Check if it is a double move (en passant-able)
+  // 
+  // TODO: Check if pawn is on last rank
+  //     pause game
+  //     prompt a change
 
   turn++;
 
@@ -469,6 +471,7 @@ void Board::MakeMove(Piece* p, int rank, int file) {
     PieceName capturedPieceName = pieceAt[file-1][rank-1]->GetTypeAsString();
 
     piecesMap[capturedPieceName.piece][capturedPieceName.color].Clear(newOffset);
+    pieces[capturedPieceName.color].Clear(newOffset);
 
     delete pieceAt[file-1][rank-1];
   }
@@ -479,6 +482,37 @@ void Board::MakeMove(Piece* p, int rank, int file) {
   unsigned int oldOffset = Util::OffsetFromRF(oldRank, oldFile);
 
   PieceName pieceName = p->GetTypeAsString();
+
+  bool isEnPassantCaptureIfPawn = enPassantPawns.Has(newOffset);
+  enPassantPawns.Clear();
+
+  if (p->Is(PAWN)) {
+    if (PAWN_DOUBLE_MOVES[oldOffset][pieceName.color].Has(newOffset)) {
+      // It is a double move and can be en passanted next turn
+      OutputDebugString("Double move");
+
+      int pawnDirection = (p->Is(WHITE_PIECE) ? 1 : -1);
+      unsigned int enPassantCaptureOffset = oldOffset + pawnDirection*8;
+
+      enPassantPawns.Set(enPassantCaptureOffset);
+    }
+
+    if (isEnPassantCaptureIfPawn) {
+      // It is an en passant capture
+
+      OutputDebugString("En passant capture");
+
+      int pawnDirection = (p->Is(WHITE_PIECE) ? 1 : -1);
+      unsigned int enPassantCaptureOffset = newOffset - pawnDirection * 8;
+
+      PieceName capturedPieceName = pieceAt[file - 1][rank - 1 - pawnDirection]->GetTypeAsString();
+
+      piecesMap[capturedPieceName.piece][capturedPieceName.color].Clear(enPassantCaptureOffset);
+      pieces[capturedPieceName.color].Clear(enPassantCaptureOffset);
+
+      delete pieceAt[file - 1][rank - 1 - pawnDirection];
+    }
+  }
 
   // Set pieces new file and rank
   p->Rank(rank);

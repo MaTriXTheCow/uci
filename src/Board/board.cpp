@@ -458,12 +458,14 @@ Piece* Board::SelectedPiece() {
 
 void Board::MakeMove(Piece* p, int rank, int file) {
   // Check if is capture, update turn, update cache lists
+
+  // TODO: Check if it is a double move (en passant-able)
+
   turn++;
 
   unsigned int newOffset = Util::OffsetFromRF(rank, file);
 
   if (HasPieceAt(rank, file)) {
-    // TODO: Get old piece name and delete bitmap entries
     PieceName capturedPieceName = pieceAt[file-1][rank-1]->GetTypeAsString();
 
     piecesMap[capturedPieceName.piece][capturedPieceName.color].Clear(newOffset);

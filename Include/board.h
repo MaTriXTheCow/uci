@@ -21,6 +21,8 @@ static BitmapCollection RANK_OCCUPANCY[64];
 static BitmapCollection DIAGONAL_OCCUPANCY[64];
 static BitmapCollection ANTIDIAGONAL_OCCUPANCY[64];
 
+static Bitmap IN_BETWEEN[64][64];
+
 class Board {
 private:
   BitmapCollection pieces;
@@ -37,8 +39,8 @@ private:
   bool hasSelected;
   Piece* selectedPiece;
 
-  Bitmap cachedLegalMoves[64];
-  bool hasLegalMovesCacheFor[64];
+  Bitmap* cachedLegalMoves[64];
+  Bitmap hasLegalMovesCacheFor;
 
 public:
   Board();
@@ -81,6 +83,7 @@ public:
   Bitmap LineAttacks(BitmapCollection*);
 
   void GenerateMoveBitmaps();
+  void GenerateInBetweenMap();
 
   unsigned int Turn();
 

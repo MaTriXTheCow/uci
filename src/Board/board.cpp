@@ -13,13 +13,11 @@ Board::Board() {
   turn = 0;
   hasSelected = false;
   selectedPiece = nullptr;
-
-  
+  hasLegalMovesCacheFor.Clear();
 
   for (int i = 0; i < 8; i++) {
     for (int j = 0; j < 8; j++) {
       pieceAt[i][j] = nullptr;
-      hasLegalMovesCacheFor[i * 8 + j] = false;
       cachedLegalMoves[i * 8 + j] = NULL;
     }
   }
@@ -68,6 +66,59 @@ void Board::Init(std::string fen) {
   LoadFromFEN(fen);
 
   GenerateMoveBitmaps();
+  GenerateInBetweenMap();
+}
+
+void Board::GenerateInBetweenMap() {
+  for (unsigned int offsetFrom = 0; offsetFrom < 64; offsetFrom++) {
+    for (unsigned int offsetTo = 0; offsetTo < 64; offsetTo++) {
+      if (offsetFrom == offsetTo) {
+        continue;
+      }
+
+      if (offsetFrom < offsetTo) {
+        continue;
+      }
+
+      // Check if not is a rank, file, diagonal or antidiagonal
+      bool isSameFile = ((offsetFrom % 8) == (offsetTo % 8));
+      bool isSameRank = ((offsetFrom / 8) == (offsetTo / 8));
+      bool isSameDiag = ((offsetFrom % 8 - offsetFrom / 8) == (offsetTo % 8 - offsetTo / 8));
+      bool isSameAntiDiag = ((offsetFrom % 8 - offsetFrom / 8) == (offsetTo / 8 - offsetTo % 8));
+
+      if (!isSameFile && !isSameRank && !isSameDiag && !isSameAntiDiag) {
+        continue;
+      }
+
+
+
+      if (isSameFile) {
+        uint64_t n = 0x0101010101010101; // First file bitmap
+        n <<= (offsetFrom % 8); // Shift to correct file
+
+        n &= ~((1ULL << (offsetTo + 1)) - 1);
+        n &= (1ULL << offsetFrom) - 1;
+
+        IN_BETWEEN[offsetFrom][offsetTo].SetAll(n);
+        IN_BETWEEN[offsetTo][offsetFrom].SetAll(n);
+
+        continue;
+      }
+
+      if (isSameRank) {
+        uint64_t n = 0x00000000000000FF;
+        n << ((offsetFrom / 8) * 8);
+
+        n &= ~((1ULL << (offsetTo + 1)) - 1);
+        n &= (1ULL << offsetFrom) - 1;
+
+        IN_BETWEEN[offsetFrom][offsetTo].SetAll(n);
+        IN_BETWEEN[offsetTo][offsetFrom].SetAll(n);
+
+        continue;
+      }
+    }
+  }
 }
 
 void Board::GenerateMoveBitmaps() {
@@ -194,30 +245,29 @@ void Board::GenerateMoveBitmaps() {
 Bitmap* Board::GetLegalMoves(Piece* p) {
   unsigned int offset = Util::OffsetFromRF(p->Rank(), p->File());
 
-  if (hasLegalMovesCacheFor[offset]) {
-    return &cachedLegalMoves[offset];
+  if (hasLegalMovesCacheFor.Has(offset)) {
+    return cachedLegalMoves[offset];
   }
 
-  Bitmap* moves = new Bitmap();
+  cachedLegalMoves[offset] = new Bitmap();
 
   if (p->Is(PAWN)) {
-    GetPawnMoves(p, moves);
+    GetPawnMoves(p, cachedLegalMoves[offset]);
   } else if (p->Is(KNIGHT)) {
-    GetKnightMoves(p, moves);
+    GetKnightMoves(p, cachedLegalMoves[offset]);
   } else if (p->Is(ROOK)) {
-    GetRookMoves(p, moves);
+    GetRookMoves(p, cachedLegalMoves[offset]);
   } else if(p->Is(BISHOP)) {
-    GetBishopMoves(p, moves);
+    GetBishopMoves(p, cachedLegalMoves[offset]);
   } else if (p->Is(QUEEN)) {
-    GetQueenMoves(p, moves);
+    GetQueenMoves(p, cachedLegalMoves[offset]);
+  } else if (p->Is(KING)) {
+    GetKingMoves(p, cachedLegalMoves[offset]);
   }
 
-  // TODO: King moves
+  hasLegalMovesCacheFor.Set(offset);
 
-  cachedLegalMoves[offset] = *moves;
-  hasLegalMovesCacheFor[offset] = true;
-
-  return moves;
+  return cachedLegalMoves[offset];
 }
 
 Bitmap Board::LineAttacks(BitmapCollection* pMask) {
@@ -232,6 +282,15 @@ Bitmap Board::LineAttacks(BitmapCollection* pMask) {
   uint64_t odiff = 2 * ls1b + mMs1b;
 
   return (*pMask)["lineEx"].And(odiff);
+}
+
+void Board::GetKingMoves(Piece* p, Bitmap* b) {
+  int rank = p->Rank();
+  int file = p->File();
+
+  uint64_t offset = Util::OffsetFromRF(rank, file);
+
+  b->OrPlace(IN_BETWEEN[offset-3+8][offset + 3+8]);
 }
 
 void Board::GetQueenMoves(Piece* p, Bitmap* b) {
@@ -526,6 +585,8 @@ void Board::MakeMove(Piece* p, int rank, int file) {
 
   piecesMap[pieceName.piece][pieceName.color].Clear(oldOffset);
   piecesMap[pieceName.piece][pieceName.color].Set(newOffset);
+
+  hasLegalMovesCacheFor.Clear();
 }
 
 bool Board::IsInBounds(int rank, int file) {

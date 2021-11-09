@@ -48,19 +48,20 @@ void UCI::ClickHandler() {
     }
   } else {
     // Check move legality
-    Bitmap* moves = board.GetLegalMoves(board.SelectedPiece());
+    Piece* selectedP = board.SelectedPiece();
+
+    Bitmap* moves = board.GetLegalMoves(selectedP);
 
     unsigned int offset = Util::OffsetFromRF(rank, file);
 
-    if (!moves->Has(offset)) {
-      board.Deselect();
+    board.Deselect();
 
+    if (!moves->Has(offset)) {
+      // Was not a legal move
       return;
     }
 
-    board.MakeMove(board.SelectedPiece(), rank, file);
-
-    board.Deselect();
+    board.MakeMove(selectedP, rank, file);
   }
 }
 

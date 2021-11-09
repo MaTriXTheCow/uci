@@ -73,6 +73,17 @@ void Bitmap::OrPlace(uint64_t n) {
   bits |= n;
 }
 
+void Bitmap::XorPlace(Bitmap* b) {
+  bits ^= b->bits;
+}
+
+void Bitmap::XorPlace(Bitmap b) {
+  bits ^= b.bits;
+}
+void Bitmap::XorPlace(uint64_t n) {
+  bits ^= n;
+}
+
 Bitmap Bitmap::Or(Bitmap* b) {
   return bits | b->bits;
 }
@@ -83,6 +94,17 @@ Bitmap Bitmap::Or(Bitmap b) {
 
 Bitmap Bitmap::Or(uint64_t n) {
   return bits | n;
+}
+
+Bitmap Bitmap::Xor(Bitmap* b) {
+  return bits ^ b->bits;
+}
+
+Bitmap Bitmap::Xor(Bitmap b) {
+  return bits ^ b.bits;
+}
+Bitmap Bitmap::Xor(uint64_t n) {
+  return bits ^ n;
 }
 
 Bitmap Bitmap::And(Bitmap* b) {

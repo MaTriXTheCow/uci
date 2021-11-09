@@ -23,7 +23,7 @@ UCI::UCI(HINSTANCE hInstance, PWSTR pCmdLine, int nCmdShow) {
     this -> GameLoop();
   });
 
-  board.Init("rnbqkbnr/pppppppp/8/8/8/8/PP1PPPPP/RNBQKBNR w KQkq - 0 1");
+  board.Init("8/3r4/3B4/1rBKBq2/3RB3/5b/3R4/3r4 w KQkq - 0 1");
 }
 
 int UCI::Run() {
@@ -60,6 +60,10 @@ void UCI::ClickHandler() {
       // Was not a legal move
       return;
     }
+
+    // Check for pins and such
+
+    //Bitmap pins = board.KingPins(board.GetKing(selectedP -> GetTypeAsString().color));
 
     board.MakeMove(selectedP, rank, file);
   }

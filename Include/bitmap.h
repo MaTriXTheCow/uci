@@ -31,9 +31,17 @@ public:
   void OrPlace(Bitmap);
   void OrPlace(uint64_t);
 
+  void XorPlace(Bitmap*);
+  void XorPlace(Bitmap);
+  void XorPlace(uint64_t);
+
   Bitmap Or(Bitmap*);
   Bitmap Or(Bitmap);
   Bitmap Or(uint64_t);
+
+  Bitmap Xor(Bitmap*);
+  Bitmap Xor(Bitmap);
+  Bitmap Xor(uint64_t);
 
   Bitmap And(Bitmap*);
   Bitmap And(Bitmap);

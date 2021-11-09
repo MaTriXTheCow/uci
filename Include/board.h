@@ -42,6 +42,9 @@ private:
   Bitmap* cachedLegalMoves[64];
   Bitmap hasLegalMovesCacheFor;
 
+  Piece* blackKing;
+  Piece* whiteKing;
+
 public:
   Board();
 
@@ -81,6 +84,13 @@ public:
   void MakeMove(Piece*, int, int);
 
   Bitmap LineAttacks(BitmapCollection*);
+  Bitmap LineAttacks(Bitmap, BitmapCollection*);
+  Bitmap KingPins(Piece*);
+
+  Piece* GetKing(std::string color);
+
+  Bitmap XrayRookAttacks(Bitmap, Bitmap, unsigned int);
+  Bitmap XrayBishopAttacks(Bitmap, Bitmap, unsigned int);
 
   void GenerateMoveBitmaps();
   void GenerateInBetweenMap();

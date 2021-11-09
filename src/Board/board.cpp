@@ -84,7 +84,7 @@ void Board::GenerateInBetweenMap() {
       bool isSameFile = ((offsetFrom % 8) == (offsetTo % 8));
       bool isSameRank = ((offsetFrom / 8) == (offsetTo / 8));
       bool isSameDiag = ((offsetFrom % 8 - offsetFrom / 8) == (offsetTo % 8 - offsetTo / 8));
-      bool isSameAntiDiag = ((offsetFrom % 8 - offsetFrom / 8) == (offsetTo / 8 - offsetTo % 8));
+      bool isSameAntiDiag = ((offsetFrom / 8 + offsetFrom % 8) == (offsetTo % 8 + offsetTo / 8));
 
       if (!isSameFile && !isSameRank && !isSameDiag && !isSameAntiDiag) {
         continue;
@@ -107,7 +107,49 @@ void Board::GenerateInBetweenMap() {
 
       if (isSameRank) {
         uint64_t n = 0x00000000000000FF;
-        n << ((offsetFrom / 8) * 8);
+        n <<= ((offsetFrom / 8ULL) * 8);
+
+        n &= ~((1ULL << (offsetTo + 1)) - 1);
+        n &= (1ULL << offsetFrom) - 1;
+
+        IN_BETWEEN[offsetFrom][offsetTo].SetAll(n);
+        IN_BETWEEN[offsetTo][offsetFrom].SetAll(n);
+
+        continue;
+      }
+
+      if (isSameDiag) {
+        uint64_t n = 0x8040201008040201;
+        int shift = (offsetFrom%8) - (offsetFrom/8);
+
+        if (shift > 0) {
+          n <<= shift;
+          n &= (0x8000000000000000 >> (8 * (shift - 1))) - 1;
+        } else if (shift < 0) {
+          n >>= -shift;
+          n &= ~((0x0000000000000001ULL << (8 * (-shift - 1))) - 1);
+        }
+
+        n &= ~((1ULL << (offsetTo + 1)) - 1);
+        n &= (1ULL << offsetFrom) - 1;
+
+        IN_BETWEEN[offsetFrom][offsetTo].SetAll(n);
+        IN_BETWEEN[offsetTo][offsetFrom].SetAll(n);
+
+        continue;
+      }
+
+      if (isSameAntiDiag) {
+        uint64_t n = 0x0102040810204080;
+        int shift = (7 - offsetFrom % 8) - (offsetFrom / 8);
+
+        if (shift > 0) {
+          n >>= shift;
+          n &= (0x8000000000000000 >> (8 * shift)) - 1;
+        } else if (shift < 0) {
+          n <<= -shift;
+          n &= ~((0x0000000000000001ULL << (8 * (-shift) + 7)) - 1);
+        }
 
         n &= ~((1ULL << (offsetTo + 1)) - 1);
         n &= (1ULL << offsetFrom) - 1;
@@ -270,6 +312,74 @@ Bitmap* Board::GetLegalMoves(Piece* p) {
   return cachedLegalMoves[offset];
 }
 
+Bitmap Board::KingPins(Piece* king) {
+  int rank = king->Rank();
+  int file = king->File();
+
+  unsigned int offset = Util::OffsetFromRF(rank, file);
+
+  PieceName pieceName = king->GetTypeAsString();
+  std::string inverseColor = king->Is(WHITE_PIECE) ? "black" : "white";
+
+  Bitmap pinned;
+  uint64_t pinner = XrayRookAttacks(pieces.All(), pieces[pieceName.color], offset).And(piecesMap["rook"][inverseColor].And(piecesMap["queen"][inverseColor])).Bits();
+
+  unsigned long index;
+
+  while (pinner) {
+    _BitScanForward64(&index, pinner);
+
+    pinned.OrPlace(IN_BETWEEN[index][offset].And(pieces[pieceName.color]));
+    pinner &= pinner - 1;
+  }
+
+  pinner = XrayBishopAttacks(pieces.All(), pieces[pieceName.color], offset).And(piecesMap["bishop"][inverseColor].And(piecesMap["queen"][inverseColor])).Bits();
+
+  while (pinner) {
+    _BitScanForward64(&index, pinner);
+
+    pinned.OrPlace(IN_BETWEEN[index][offset].And(pieces[pieceName.color]));
+    pinner &= pinner - 1;
+  }
+
+  return pinned;
+}
+
+Bitmap Board::XrayRookAttacks(Bitmap occ, Bitmap blockers, unsigned int rookOffset) {
+  Bitmap attacks;
+
+  attacks.OrPlace(LineAttacks(occ, &FILE_OCCUPANCY[rookOffset]));
+  attacks.OrPlace(LineAttacks(occ, &RANK_OCCUPANCY[rookOffset]));
+  attacks.XorPlace(LineAttacks(occ.Xor(blockers.And(attacks)), &FILE_OCCUPANCY[rookOffset]).Or(LineAttacks(occ.Xor(blockers.And(attacks)), &RANK_OCCUPANCY[rookOffset])));
+
+  return attacks;
+}
+
+Bitmap Board::XrayBishopAttacks(Bitmap occ, Bitmap blockers, unsigned int bishopOffset) {
+  Bitmap attacks;
+
+  attacks.OrPlace(LineAttacks(occ, &DIAGONAL_OCCUPANCY[bishopOffset]));
+  attacks.OrPlace(LineAttacks(occ, &ANTIDIAGONAL_OCCUPANCY[bishopOffset]));
+  attacks.XorPlace(LineAttacks(occ.Xor(blockers.And(attacks)), &DIAGONAL_OCCUPANCY[bishopOffset]).Or(LineAttacks(occ.Xor(blockers.And(attacks)), &ANTIDIAGONAL_OCCUPANCY[bishopOffset])));
+
+  return attacks;
+}
+
+Bitmap Board::LineAttacks(Bitmap occ, BitmapCollection* pMask) {
+  uint64_t lower = (*pMask)["lower"].And(occ).Bits();
+  uint64_t upper = (*pMask)["upper"].And(occ).Bits();
+
+  unsigned long int index;
+  _BitScanReverse64(&index, lower | 1);
+
+  uint64_t mMs1b = (int64_t)(-1) << index;
+  uint64_t ls1b = upper & -upper;
+  uint64_t odiff = 2 * ls1b + mMs1b;
+
+  return (*pMask)["lineEx"].And(odiff);
+}
+
+
 Bitmap Board::LineAttacks(BitmapCollection* pMask) {
   uint64_t lower = (*pMask)["lower"].And(pieces.All()).Bits();
   uint64_t upper = (*pMask)["upper"].And(pieces.All()).Bits();
@@ -284,13 +394,17 @@ Bitmap Board::LineAttacks(BitmapCollection* pMask) {
   return (*pMask)["lineEx"].And(odiff);
 }
 
+Piece* Board::GetKing(std::string color) {
+  return (color == "white") ? whiteKing : blackKing;
+}
+
 void Board::GetKingMoves(Piece* p, Bitmap* b) {
   int rank = p->Rank();
   int file = p->File();
 
   uint64_t offset = Util::OffsetFromRF(rank, file);
 
-  b->OrPlace(IN_BETWEEN[offset-3+8][offset + 3+8]);
+  b->OrPlace(KingPins(GetKing("white")));
 }
 
 void Board::GetQueenMoves(Piece* p, Bitmap* b) {
@@ -444,6 +558,14 @@ void Board::SetPieceAt(int file, int rank, uint8_t type, ImageReader* reader) {
   pieces[pieceName.color].Set(offset);
 
   piecesMap[pieceName.piece][pieceName.color].Set(offset);
+
+  if (pieceName.piece == "king") {
+    if (pieceName.color == "white") {
+      whiteKing = pieceAt[file - 1][rank - 1];
+    } else {
+      blackKing = pieceAt[file - 1][rank - 1];
+    }
+  }
 }
 
 bool Board::HasPieceAt(int rank, int file) {
@@ -548,7 +670,6 @@ void Board::MakeMove(Piece* p, int rank, int file) {
   if (p->Is(PAWN)) {
     if (PAWN_DOUBLE_MOVES[oldOffset][pieceName.color].Has(newOffset)) {
       // It is a double move and can be en passanted next turn
-      OutputDebugString("Double move");
 
       int pawnDirection = (p->Is(WHITE_PIECE) ? 1 : -1);
       unsigned int enPassantCaptureOffset = oldOffset + pawnDirection*8;
@@ -558,8 +679,6 @@ void Board::MakeMove(Piece* p, int rank, int file) {
 
     if (isEnPassantCaptureIfPawn) {
       // It is an en passant capture
-
-      OutputDebugString("En passant capture");
 
       int pawnDirection = (p->Is(WHITE_PIECE) ? 1 : -1);
       unsigned int enPassantCaptureOffset = newOffset - pawnDirection * 8;

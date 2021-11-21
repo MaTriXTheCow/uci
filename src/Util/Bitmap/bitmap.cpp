@@ -20,6 +20,22 @@ bool Bitmap::Has(unsigned int n) {
   return bits & (1ULL << n);
 }
 
+bool Bitmap::HasAll(unsigned int n1, unsigned int n2) {
+  return bits & (1ULL << n1 | 1ULL << n2);
+}
+
+bool Bitmap::HasAll(unsigned int n1, unsigned int n2, unsigned int n3) {
+  return bits & (1ULL << n1 | 1ULL << n2 | 1ULL << n3);
+}
+
+bool Bitmap::HasAll(unsigned int n1, unsigned int n2, unsigned int n3, unsigned int n4) {
+  return bits & (1ULL << n1 | 1ULL << n2 | 1ULL << n3 | 1ULL << n4);
+}
+
+bool Bitmap::HasAll(unsigned int n1, unsigned int n2, unsigned int n3, unsigned int n4, unsigned int n5) {
+  return bits & (1ULL << n1 | 1ULL << n2 | 1ULL << n3 | 1ULL << n4 | 1ULL << n5);
+}
+
 void Bitmap::Set(unsigned int n) {
   bits &= (1ULL << n) ^ 0xFFFFFFFFFFFFFFFFULL;
 

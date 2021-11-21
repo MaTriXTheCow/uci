@@ -14,12 +14,13 @@ static BitmapCollection PAWN_MOVES[64];
 static BitmapCollection PAWN_CAPTURES[64];
 static BitmapCollection PAWN_DOUBLE_MOVES[64];
 
-static Bitmap KNIGHT_MOVES[64];
+inline Bitmap KNIGHT_MOVES[64];
+inline Bitmap KING_MOVES[64];
 
-static BitmapCollection FILE_OCCUPANCY[64];
-static BitmapCollection RANK_OCCUPANCY[64];
-static BitmapCollection DIAGONAL_OCCUPANCY[64];
-static BitmapCollection ANTIDIAGONAL_OCCUPANCY[64];
+inline BitmapCollection FILE_OCCUPANCY[64];
+inline BitmapCollection RANK_OCCUPANCY[64];
+inline BitmapCollection DIAGONAL_OCCUPANCY[64];
+inline BitmapCollection ANTIDIAGONAL_OCCUPANCY[64];
 
 static Bitmap IN_BETWEEN[64][64];
 
@@ -35,6 +36,8 @@ private:
   Piece* pieceAt[8][8];
 
   unsigned int turn;
+
+  bool castleMap[4];
 
   bool hasSelected;
   Piece* selectedPiece;
@@ -70,16 +73,29 @@ public:
   bool HasSpecificPieceAt(int, int, PieceName);
   Piece* PieceAt(int, int);
 
+  Bitmap* PiecesBitmap(uint8_t);
+  Bitmap* PiecesBitmap();
+
   bool IsInBounds(int, int);
   bool IsInBoundsAndCheckPiece(int, int, bool);
 
-  Bitmap* GetLegalMoves(Piece*);
-  void GetPawnMoves(Piece*, Bitmap*);
-  void GetRookMoves(Piece*, Bitmap*);
-  void GetBishopMoves(Piece*, Bitmap*);
-  void GetKnightMoves(Piece*, Bitmap*);
-  void GetQueenMoves(Piece*, Bitmap*);
-  void GetKingMoves(Piece*, Bitmap*);
+  Bitmap* GetAttacks(Piece*);
+  void PawnAttacks(Piece*, Bitmap*);
+  void RookAttacks(Piece*, Bitmap*);
+  void BishopAttacks(Piece*, Bitmap*);
+  void KnightAttacks(Piece*, Bitmap*);
+  void QueenAttacks(Piece*, Bitmap*);
+  void KingAttacks(Piece*, Bitmap*);
+
+  Bitmap* GetMoves(Piece*);
+  void PawnMoves(Piece*, Bitmap*);
+  void RookMoves(Piece*, Bitmap*);
+  void BishopMoves(Piece*, Bitmap*);
+  void KnightMoves(Piece*, Bitmap*);
+  void QueenMoves(Piece*, Bitmap*);
+  void KingMoves(Piece*, Bitmap*);
+
+  Bitmap* GetAttacksFromColor(uint8_t);
 
   void MakeMove(Piece*, int, int);
 
@@ -89,8 +105,8 @@ public:
 
   Piece* GetKing(std::string color);
 
-  Bitmap XrayRookAttacks(Bitmap, Bitmap, unsigned int);
-  Bitmap XrayBishopAttacks(Bitmap, Bitmap, unsigned int);
+  Bitmap XrayRookAttacks(Bitmap, unsigned int);
+  Bitmap XrayBishopAttacks(Bitmap, unsigned int);
 
   void GenerateMoveBitmaps();
   void GenerateInBetweenMap();

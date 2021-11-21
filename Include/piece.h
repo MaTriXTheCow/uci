@@ -39,6 +39,8 @@ public:
   int File();
   void Rank(int);
   void File(int);
+
+  uint8_t Descriptor();
 };
 
 #endif

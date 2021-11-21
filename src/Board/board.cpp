@@ -28,6 +28,14 @@ Board::Board() {
   piecesMap["knights"] = BitmapCollection();
   piecesMap["queens"]  = BitmapCollection();
   piecesMap["kings"]   = BitmapCollection();
+
+  castleMap[0] = false;
+  castleMap[1] = false;
+  castleMap[2] = false;
+  castleMap[3] = false;
+
+  blackKing = nullptr;
+  whiteKing = nullptr;
 }
 
 void Board::Draw(WindowProcess winProc) {
@@ -173,12 +181,12 @@ void Board::GenerateMoveBitmaps() {
 
       // Occupancy line bitmaps
       FILE_OCCUPANCY[offset]["lineEx"].SetAll((0x8080808080808080 ^ (0x8000000000000000 >> (8 * (8-rank)))) >> (8-file));
-      FILE_OCCUPANCY[offset]["lower"] = FILE_OCCUPANCY[offset]["lineEx"].And((1ULL << offset) - 1);
-      FILE_OCCUPANCY[offset]["upper"] = FILE_OCCUPANCY[offset]["lineEx"].And(~((1ULL << offset) - 1));
+      FILE_OCCUPANCY[offset]["lower"] = FILE_OCCUPANCY[offset]["lineEx"].And(((1ULL << offset) - 1) | 1ULL << offset);
+      FILE_OCCUPANCY[offset]["upper"] = FILE_OCCUPANCY[offset]["lineEx"].And(~(((1ULL << offset) - 1) | 1ULL << offset));
 
       RANK_OCCUPANCY[offset]["lineEx"].SetAll((0xFF00000000000000 ^ (0x8000000000000000 >> (8 - file))) >> (8*(8 - rank)));
-      RANK_OCCUPANCY[offset]["lower"] = RANK_OCCUPANCY[offset]["lineEx"].And((1ULL << (offset+1)) - 1);
-      RANK_OCCUPANCY[offset]["upper"] = RANK_OCCUPANCY[offset]["lineEx"].And(~((1ULL << (offset+1)) - 1));
+      RANK_OCCUPANCY[offset]["lower"] = RANK_OCCUPANCY[offset]["lineEx"].And(((1ULL << offset) - 1) | 1ULL << offset);
+      RANK_OCCUPANCY[offset]["upper"] = RANK_OCCUPANCY[offset]["lineEx"].And(~(((1ULL << offset) - 1) | 1ULL << offset));
 
       uint64_t n = 0x8040201008040201;
       int shift = (file-1)-(rank-1);
@@ -194,8 +202,8 @@ void Board::GenerateMoveBitmaps() {
       n ^= (0x0000000000000001ULL << (8 * (rank - 1) + (file - 1)));
 
       DIAGONAL_OCCUPANCY[offset]["lineEx"].SetAll(n);
-      DIAGONAL_OCCUPANCY[offset]["lower"] = DIAGONAL_OCCUPANCY[offset]["lineEx"].And((1ULL << (offset + 1)) - 1);
-      DIAGONAL_OCCUPANCY[offset]["upper"] = DIAGONAL_OCCUPANCY[offset]["lineEx"].And(~((1ULL << (offset + 1)) - 1));
+      DIAGONAL_OCCUPANCY[offset]["lower"] = DIAGONAL_OCCUPANCY[offset]["lineEx"].And(((1ULL << offset) - 1) | 1ULL << offset);
+      DIAGONAL_OCCUPANCY[offset]["upper"] = DIAGONAL_OCCUPANCY[offset]["lineEx"].And(~(((1ULL << offset) - 1) | 1ULL << offset));
 
       n = 0x0102040810204080;
       shift = (8-file)-(rank-1);
@@ -212,8 +220,8 @@ void Board::GenerateMoveBitmaps() {
 
 
       ANTIDIAGONAL_OCCUPANCY[offset]["lineEx"].SetAll(n);
-      ANTIDIAGONAL_OCCUPANCY[offset]["lower"] = ANTIDIAGONAL_OCCUPANCY[offset]["lineEx"].And((1ULL << (offset + 1)) - 1);
-      ANTIDIAGONAL_OCCUPANCY[offset]["upper"] = ANTIDIAGONAL_OCCUPANCY[offset]["lineEx"].And(~((1ULL << (offset + 1)) - 1));
+      ANTIDIAGONAL_OCCUPANCY[offset]["lower"] = ANTIDIAGONAL_OCCUPANCY[offset]["lineEx"].And(((1ULL << offset) - 1) | 1ULL << offset);
+      ANTIDIAGONAL_OCCUPANCY[offset]["upper"] = ANTIDIAGONAL_OCCUPANCY[offset]["lineEx"].And(~(((1ULL << offset) - 1) | 1ULL << offset));
 
       // PAWN MOVES
 
@@ -233,14 +241,24 @@ void Board::GenerateMoveBitmaps() {
 
       // PAWN CAPTURES
 
-      if (file != 0) {
-        PAWN_CAPTURES[offset]["white"].Set(offset + 7);
-        PAWN_CAPTURES[offset]["black"].Set(offset - 9);
+      if (file != 1) {
+        if (rank != 8) {
+          PAWN_CAPTURES[offset]["white"].Set(offset + 7);
+        }
+        
+        if (rank != 1) {
+          PAWN_CAPTURES[offset]["black"].Set(offset - 9);
+        }
       }
 
       if (file != 8) {
-        PAWN_CAPTURES[offset]["white"].Set(offset + 9);
-        PAWN_CAPTURES[offset]["black"].Set(offset - 7);
+        if (rank != 8) {
+          PAWN_CAPTURES[offset]["white"].Set(offset + 9);
+        }
+        
+        if (rank != 1) {
+          PAWN_CAPTURES[offset]["black"].Set(offset - 7);
+        }
       }
 
       // KNIGHT MOVES
@@ -280,11 +298,41 @@ void Board::GenerateMoveBitmaps() {
           }
         }
       }
+
+      // KING MOVES
+
+      if (file > 1) {
+        KING_MOVES[offset].Set(offset - 1);
+
+        if (rank > 1) {
+          KING_MOVES[offset].Set(offset - 9);
+          KING_MOVES[offset].Set(offset - 8);
+        }
+
+        if (rank < 8) {
+          KING_MOVES[offset].Set(offset + 7);
+          KING_MOVES[offset].Set(offset + 8);
+        }
+      }
+
+      if (file < 8) {
+        KING_MOVES[offset].Set(offset + 1);
+
+        if (rank > 1) {
+          KING_MOVES[offset].Set(offset - 7);
+          KING_MOVES[offset].Set(offset - 8);
+        }
+
+        if (rank < 8) {
+          KING_MOVES[offset].Set(offset + 9);
+          KING_MOVES[offset].Set(offset + 8);
+        }
+      }
     }
   }
 }
 
-Bitmap* Board::GetLegalMoves(Piece* p) {
+Bitmap* Board::GetAttacks(Piece* p) {
   unsigned int offset = Util::OffsetFromRF(p->Rank(), p->File());
 
   if (hasLegalMovesCacheFor.Has(offset)) {
@@ -294,22 +342,43 @@ Bitmap* Board::GetLegalMoves(Piece* p) {
   cachedLegalMoves[offset] = new Bitmap();
 
   if (p->Is(PAWN)) {
-    GetPawnMoves(p, cachedLegalMoves[offset]);
+    PawnAttacks(p, cachedLegalMoves[offset]);
   } else if (p->Is(KNIGHT)) {
-    GetKnightMoves(p, cachedLegalMoves[offset]);
+    KnightAttacks(p, cachedLegalMoves[offset]);
   } else if (p->Is(ROOK)) {
-    GetRookMoves(p, cachedLegalMoves[offset]);
+    RookAttacks(p, cachedLegalMoves[offset]);
   } else if(p->Is(BISHOP)) {
-    GetBishopMoves(p, cachedLegalMoves[offset]);
+    BishopAttacks(p, cachedLegalMoves[offset]);
   } else if (p->Is(QUEEN)) {
-    GetQueenMoves(p, cachedLegalMoves[offset]);
+    QueenAttacks(p, cachedLegalMoves[offset]);
   } else if (p->Is(KING)) {
-    GetKingMoves(p, cachedLegalMoves[offset]);
+    KingAttacks(p, cachedLegalMoves[offset]);
   }
 
   hasLegalMovesCacheFor.Set(offset);
 
   return cachedLegalMoves[offset];
+}
+
+Bitmap* Board::GetMoves(Piece* p) {
+  unsigned int offset = Util::OffsetFromRF(p->Rank(), p->File());
+  Bitmap* ret = new Bitmap();
+
+  if (p->Is(PAWN)) {
+    PawnMoves(p, ret);
+  } else if (p->Is(KNIGHT)) {
+    KnightMoves(p, ret);
+  } else if (p->Is(ROOK)) {
+    RookMoves(p, ret);
+  } else if (p->Is(BISHOP)) {
+    BishopMoves(p, ret);
+  } else if (p->Is(QUEEN)) {
+    QueenMoves(p, ret);
+  } else if (p->Is(KING)) {
+    KingMoves(p, ret);
+  }
+
+  return ret;
 }
 
 Bitmap Board::KingPins(Piece* king) {
@@ -322,9 +391,10 @@ Bitmap Board::KingPins(Piece* king) {
   std::string inverseColor = king->Is(WHITE_PIECE) ? "black" : "white";
 
   Bitmap pinned;
-  uint64_t pinner = XrayRookAttacks(pieces.All(), pieces[pieceName.color], offset).And(piecesMap["rook"][inverseColor].And(piecesMap["queen"][inverseColor])).Bits();
+  uint64_t pinner = XrayRookAttacks(pieces[pieceName.color], offset).Bits();
+  pinner &= piecesMap["rook"][inverseColor].Or(piecesMap["queen"][inverseColor]).Bits();
 
-  unsigned long index;
+  unsigned long index = 0;
 
   while (pinner) {
     _BitScanForward64(&index, pinner);
@@ -333,7 +403,7 @@ Bitmap Board::KingPins(Piece* king) {
     pinner &= pinner - 1;
   }
 
-  pinner = XrayBishopAttacks(pieces.All(), pieces[pieceName.color], offset).And(piecesMap["bishop"][inverseColor].And(piecesMap["queen"][inverseColor])).Bits();
+  pinner = XrayBishopAttacks(pieces[pieceName.color], offset).And(piecesMap["bishop"][inverseColor].Or(piecesMap["queen"][inverseColor])).Bits();
 
   while (pinner) {
     _BitScanForward64(&index, pinner);
@@ -345,22 +415,22 @@ Bitmap Board::KingPins(Piece* king) {
   return pinned;
 }
 
-Bitmap Board::XrayRookAttacks(Bitmap occ, Bitmap blockers, unsigned int rookOffset) {
+Bitmap Board::XrayRookAttacks(Bitmap blockers, unsigned int rookOffset) {
   Bitmap attacks;
 
-  attacks.OrPlace(LineAttacks(occ, &FILE_OCCUPANCY[rookOffset]));
-  attacks.OrPlace(LineAttacks(occ, &RANK_OCCUPANCY[rookOffset]));
-  attacks.XorPlace(LineAttacks(occ.Xor(blockers.And(attacks)), &FILE_OCCUPANCY[rookOffset]).Or(LineAttacks(occ.Xor(blockers.And(attacks)), &RANK_OCCUPANCY[rookOffset])));
+  attacks.OrPlace(LineAttacks(&FILE_OCCUPANCY[rookOffset]));
+  attacks.OrPlace(LineAttacks(&RANK_OCCUPANCY[rookOffset]));
+  attacks.XorPlace(LineAttacks(pieces.All().Xor(blockers.And(attacks)), &FILE_OCCUPANCY[rookOffset]).Or(LineAttacks(pieces.All().Xor(blockers.And(attacks)), &RANK_OCCUPANCY[rookOffset])));
 
   return attacks;
 }
 
-Bitmap Board::XrayBishopAttacks(Bitmap occ, Bitmap blockers, unsigned int bishopOffset) {
+Bitmap Board::XrayBishopAttacks(Bitmap blockers, unsigned int bishopOffset) {
   Bitmap attacks;
 
-  attacks.OrPlace(LineAttacks(occ, &DIAGONAL_OCCUPANCY[bishopOffset]));
-  attacks.OrPlace(LineAttacks(occ, &ANTIDIAGONAL_OCCUPANCY[bishopOffset]));
-  attacks.XorPlace(LineAttacks(occ.Xor(blockers.And(attacks)), &DIAGONAL_OCCUPANCY[bishopOffset]).Or(LineAttacks(occ.Xor(blockers.And(attacks)), &ANTIDIAGONAL_OCCUPANCY[bishopOffset])));
+  attacks.OrPlace(LineAttacks(&DIAGONAL_OCCUPANCY[bishopOffset]));
+  attacks.OrPlace(LineAttacks(&ANTIDIAGONAL_OCCUPANCY[bishopOffset]));
+  attacks.XorPlace(LineAttacks(pieces.All().Xor(blockers.And(attacks)), &DIAGONAL_OCCUPANCY[bishopOffset]).Or(LineAttacks(pieces.All().Xor(blockers.And(attacks)), &ANTIDIAGONAL_OCCUPANCY[bishopOffset])));
 
   return attacks;
 }
@@ -398,90 +468,157 @@ Piece* Board::GetKing(std::string color) {
   return (color == "white") ? whiteKing : blackKing;
 }
 
-void Board::GetKingMoves(Piece* p, Bitmap* b) {
-  int rank = p->Rank();
-  int file = p->File();
+Bitmap* Board::GetAttacksFromColor(uint8_t color) {
+  Bitmap* attacks = new Bitmap();
 
-  uint64_t offset = Util::OffsetFromRF(rank, file);
+  uint64_t colorPiecesBits = PiecesBitmap(color)->Bits();
 
-  b->OrPlace(KingPins(GetKing("white")));
-}
+  unsigned long int index;
 
-void Board::GetQueenMoves(Piece* p, Bitmap* b) {
-  int rank = p->Rank();
-  int file = p->File();
+  while (colorPiecesBits > 0) {
+    _BitScanForward64(&index, colorPiecesBits);
 
-  uint64_t offset = Util::OffsetFromRF(rank, file);
-  PieceName pieceName = p->GetTypeAsString();
+    int rank = (index / 8) + 1;
+    int file = (index % 8) + 1;
 
-  b->OrPlace(LineAttacks(&DIAGONAL_OCCUPANCY[offset]));
-  b->OrPlace(LineAttacks(&ANTIDIAGONAL_OCCUPANCY[offset]));
-  b->OrPlace(LineAttacks(&FILE_OCCUPANCY[offset]));
-  b->OrPlace(LineAttacks(&RANK_OCCUPANCY[offset]));
+    Piece* attacksFromP = PieceAt(file, rank);
 
-  b->AndPlace(pieces[pieceName.color].Inverse());
-}
+    attacks -> OrPlace(GetAttacks(attacksFromP));
 
-void Board::GetBishopMoves(Piece* p, Bitmap* b) {
-  int rank = p->Rank();
-  int file = p->File();
-
-  uint64_t offset = Util::OffsetFromRF(rank, file);
-  PieceName pieceName = p->GetTypeAsString();
-
-  b->OrPlace(LineAttacks(&DIAGONAL_OCCUPANCY[offset]));
-  b->OrPlace(LineAttacks(&ANTIDIAGONAL_OCCUPANCY[offset]));
-
-  b->AndPlace(pieces[pieceName.color].Inverse());
-}
-
-void Board::GetRookMoves(Piece* p, Bitmap* b) {
-  int rank = p->Rank();
-  int file = p->File();
-
-  uint64_t offset = Util::OffsetFromRF(rank, file);
-  PieceName pieceName = p->GetTypeAsString();
-
-  b->OrPlace(LineAttacks(&FILE_OCCUPANCY[offset]));
-  b->OrPlace(LineAttacks(&RANK_OCCUPANCY[offset]));
-
-  b->AndPlace(pieces[pieceName.color].Inverse());
-}
-
-void Board::GetKnightMoves(Piece* p, Bitmap* b) {
-  int rank = p->Rank();
-  int file = p->File();
-
-  uint64_t offset = Util::OffsetFromRF(rank, file);
-
-  std::string inverseColor = p->Is(WHITE_PIECE) ? "black" : "white";
-
-  PieceName pieceName = p->GetTypeAsString();
-
-  b->OrPlace(KNIGHT_MOVES[offset].And(pieces[pieceName.color].Inverse()));
-}
-
-void Board::GetPawnMoves(Piece* p, Bitmap* b) {
-  int rank = p->Rank();
-  int file = p->File();
-
-  uint64_t offset = Util::OffsetFromRF(rank, file);
-
-  std::string inverseColor = p->Is(WHITE_PIECE) ? "black" : "white";
-
-  PieceName pieceName = p->GetTypeAsString();
-
-  // One-step move
-
-  b->OrPlace(PAWN_MOVES[offset][pieceName.color].And(pieces.All().Inverse()));
-
-  if (!b->IsEmpty()) {
-    // Two-step move
-    b->OrPlace(PAWN_DOUBLE_MOVES[offset][pieceName.color].And(pieces.All().Inverse()));
+    colorPiecesBits &= colorPiecesBits - 1;
   }
 
+  return attacks;
+}
+
+void Board::KingMoves(Piece* p, Bitmap* b) {
+  unsigned int offset = Util::OffsetFromRF(p->Rank(), p->File());
+
+  KingAttacks(p, b);
+
+  uint8_t inverseColor = (p->Descriptor() & 1) ^ 1;
+
+  // ADD CASTLING AND CHECK CHECKING
+  Bitmap* attacks = GetAttacksFromColor(inverseColor);
+
+  b->AndPlace(attacks->Inverse());
+
+  b->AndPlace(PiecesBitmap(p->Descriptor() & 1) -> Inverse());
+
+  // Castling
+  if (castleMap[inverseColor * 2] && IN_BETWEEN[offset][offset + 3].And(pieces.All()).IsEmpty() && IN_BETWEEN[offset][offset+2].And(attacks).IsEmpty()) {
+    // Kingside castle is OK!
+    b->Set(offset + 2ULL);
+  }
+
+  if (castleMap[inverseColor * 2 + 1] && IN_BETWEEN[offset][offset - 4].And(pieces.All()).IsEmpty() && IN_BETWEEN[offset][offset-2].And(attacks).IsEmpty()) {
+    // Queenside castle is OK!
+    b->Set(offset - 2ULL);
+  }
+}
+
+void Board::QueenMoves(Piece* p, Bitmap* b) {
+  QueenAttacks(p, b);
+
+  b->AndPlace(PiecesBitmap(p->Descriptor() & 1) -> Inverse());
+}
+
+void Board::RookMoves(Piece* p, Bitmap* b) {
+  RookAttacks(p, b);
+
+  b->AndPlace(PiecesBitmap(p->Descriptor() & 1) -> Inverse());
+}
+
+void Board::BishopMoves(Piece* p, Bitmap* b) {
+  BishopAttacks(p, b);
+
+  b->AndPlace(PiecesBitmap(p->Descriptor() & 1) -> Inverse());
+}
+
+void Board::KnightMoves(Piece* p, Bitmap* b) {
+  KnightAttacks(p, b);
+
+  b->AndPlace(PiecesBitmap(p->Descriptor() & 1) -> Inverse());
+}
+
+void Board::PawnMoves(Piece* p, Bitmap* b) {
+  PawnAttacks(p, b);
+
+  unsigned int offset = Util::OffsetFromRF(p->Rank(), p->File());
+  PieceName pieceName = p->GetTypeAsString();
+
+  // Removing if there are no pieces to attack.
+  b->AndPlace(PiecesBitmap((p->Descriptor() & 1) ^ 1)->Or(enPassantPawns));
+
+  // Add double moves
+  b->OrPlace(PAWN_MOVES[offset][pieceName.color].And(PiecesBitmap() -> Inverse()));
+
+  // If first move completed, try adding next move
+  if (!(b->And(PAWN_MOVES[offset][pieceName.color])).IsEmpty()) {
+    b->OrPlace(PAWN_DOUBLE_MOVES[offset][pieceName.color].And(PiecesBitmap()->Inverse()));
+  }
+}
+
+void Board::KingAttacks(Piece* p, Bitmap* b) {
+  int rank = p->Rank();
+  int file = p->File();
+
+  uint64_t offset = Util::OffsetFromRF(rank, file);
+
+  b->OrPlace(KING_MOVES[offset]);
+}
+
+void Board::QueenAttacks(Piece* p, Bitmap* b) {
+  int rank = p->Rank();
+  int file = p->File();
+
+  uint64_t offset = Util::OffsetFromRF(rank, file);
+
+  b->OrPlace(LineAttacks(&DIAGONAL_OCCUPANCY[offset]));
+  b->OrPlace(LineAttacks(&ANTIDIAGONAL_OCCUPANCY[offset]));
+  b->OrPlace(LineAttacks(&FILE_OCCUPANCY[offset]));
+  b->OrPlace(LineAttacks(&RANK_OCCUPANCY[offset]));
+}
+
+void Board::BishopAttacks(Piece* p, Bitmap* b) {
+  int rank = p->Rank();
+  int file = p->File();
+
+  uint64_t offset = Util::OffsetFromRF(rank, file);
+
+  b->OrPlace(LineAttacks(&DIAGONAL_OCCUPANCY[offset]));
+  b->OrPlace(LineAttacks(&ANTIDIAGONAL_OCCUPANCY[offset]));
+}
+
+void Board::RookAttacks(Piece* p, Bitmap* b) {
+  int rank = p->Rank();
+  int file = p->File();
+
+  uint64_t offset = Util::OffsetFromRF(rank, file);
+
+  b->OrPlace(LineAttacks(&FILE_OCCUPANCY[offset]));
+  b->OrPlace(LineAttacks(&RANK_OCCUPANCY[offset]));
+}
+
+void Board::KnightAttacks(Piece* p, Bitmap* b) {
+  int rank = p->Rank();
+  int file = p->File();
+
+  uint64_t offset = Util::OffsetFromRF(rank, file);
+
+  b->OrPlace(KNIGHT_MOVES[offset]);
+}
+
+void Board::PawnAttacks(Piece* p, Bitmap* b) {
+  int rank = p->Rank();
+  int file = p->File();
+
+  uint64_t offset = Util::OffsetFromRF(rank, file);
+
+  PieceName pieceName = p->GetTypeAsString();
+
   // Captures
-  b->OrPlace(PAWN_CAPTURES[offset][pieceName.color].And(pieces[inverseColor].Or(enPassantPawns)));
+  b->OrPlace(PAWN_CAPTURES[offset][pieceName.color]);
 }
 
 void Board::LoadFromFEN(std::string fen) {
@@ -535,6 +672,24 @@ void Board::LoadFromFEN(std::string fen) {
     Util::RankFileFromString(enPassantTargetSquareString, &r, &f);
 
     enPassantPawns.Set(Util::OffsetFromRF(r, f));
+  }
+
+  if (canCastleString != "-") {
+    int length = canCastleString.length();
+
+    for (int i = 0; i < length; i++) {
+      char c = canCastleString[i];
+
+      if (c == 'K') {
+        castleMap[0] = true;
+      } else if (c == 'Q') {
+        castleMap[1] = true;
+      } else if (c == 'k') {
+        castleMap[2] = true;
+      } else {
+        castleMap[3] = true;
+      }
+    }
   }
 
   turn = std::stoi(fullMoveString) * 2 - ((turnColorString[0] == 'w') ? 1 : 0);
@@ -637,6 +792,14 @@ Piece* Board::SelectedPiece() {
   return selectedPiece;
 }
 
+Bitmap* Board::PiecesBitmap(uint8_t color) {
+  return &pieces[color ? "white" : "black"];
+}
+
+Bitmap* Board::PiecesBitmap() {
+  return &pieces.All();
+}
+
 void Board::MakeMove(Piece* p, int rank, int file) {
   // Check if is capture, update turn, update cache lists
   // 
@@ -648,6 +811,8 @@ void Board::MakeMove(Piece* p, int rank, int file) {
 
   unsigned int newOffset = Util::OffsetFromRF(rank, file);
 
+
+  // If a capture, remove the captured piece from all bitmaps and maps
   if (HasPieceAt(rank, file)) {
     PieceName capturedPieceName = pieceAt[file-1][rank-1]->GetTypeAsString();
 
@@ -666,6 +831,8 @@ void Board::MakeMove(Piece* p, int rank, int file) {
 
   bool isEnPassantCaptureIfPawn = enPassantPawns.Has(newOffset);
   enPassantPawns.Clear();
+
+  // Check for pawn double moves and en passants
 
   if (p->Is(PAWN)) {
     if (PAWN_DOUBLE_MOVES[oldOffset][pieceName.color].Has(newOffset)) {
@@ -692,11 +859,14 @@ void Board::MakeMove(Piece* p, int rank, int file) {
     }
   }
 
+  // TODO: Check for rook or king moves (to remove castling permissions)
+
   // Set pieces new file and rank
   p->Rank(rank);
   p->File(file);
 
   pieceAt[file-1][rank-1] = p;
+  pieceAt[oldFile][oldRank] = nullptr;
 
   // Update bitmaps
   pieces[pieceName.color].Clear(oldOffset);

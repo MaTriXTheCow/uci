@@ -1,4 +1,3 @@
 TODO LIST:
 - Clean up ImageReader::ReadImage function
-- Make en-passant a thing
-- Sliding pieces nice stuff
+- Make pieces map have uint8_t as key instead of std::string for efficiency

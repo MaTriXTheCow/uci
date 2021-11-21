@@ -16,6 +16,10 @@ public:
   bool IsEmpty();
 
   bool Has(unsigned int);
+  bool HasAll(unsigned int, unsigned int);
+  bool HasAll(unsigned int, unsigned int, unsigned int);
+  bool HasAll(unsigned int, unsigned int, unsigned int, unsigned int);
+  bool HasAll(unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
 
   void SetAll(uint64_t);
 

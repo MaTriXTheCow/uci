@@ -39,6 +39,10 @@ void Piece::Draw(WindowProcess winProc, int background) {
   winProc.DrawImageSquare(rank, file, pieceImg, background);
 }
 
+uint8_t Piece::Descriptor() {
+  return descriptor;
+}
+
 PieceName Piece::GetTypeAsString() {
   PieceName output;
 

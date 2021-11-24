@@ -22,7 +22,7 @@ inline BitmapCollection RANK_OCCUPANCY[64];
 inline BitmapCollection DIAGONAL_OCCUPANCY[64];
 inline BitmapCollection ANTIDIAGONAL_OCCUPANCY[64];
 
-static Bitmap IN_BETWEEN[64][64];
+inline Bitmap IN_BETWEEN[64][64];
 
 class Board {
 private:
@@ -47,6 +47,15 @@ private:
 
   Piece* blackKing;
   Piece* whiteKing;
+
+  bool kingIsChecked;
+  bool isDoubleCheck;
+  
+  Bitmap checkRayAndPiece;
+  Piece* checkerPiece;
+
+  bool hasKingPinCache;
+  Bitmap kingPins;
 
 public:
   Board();
@@ -75,6 +84,10 @@ public:
 
   Bitmap* PiecesBitmap(uint8_t);
   Bitmap* PiecesBitmap();
+  Bitmap* PieceBitmap(std::string, std::string);
+
+
+  bool HasEnPassantSquareAt(unsigned int);
 
   bool IsInBounds(int, int);
   bool IsInBoundsAndCheckPiece(int, int, bool);
@@ -104,6 +117,7 @@ public:
   Bitmap KingPins(Piece*);
 
   Piece* GetKing(std::string color);
+  Piece* GetCheckingPiece();
 
   Bitmap XrayRookAttacks(Bitmap, unsigned int);
   Bitmap XrayBishopAttacks(Bitmap, unsigned int);
@@ -114,6 +128,7 @@ public:
   unsigned int Turn();
 
   bool IsTurn(Piece*);
+  bool KingChecked();
 };
 
 #endif

@@ -61,61 +61,60 @@ void UCI::ClickHandler() {
 
     board.Deselect(); 
 
-    // TODO: Special business for pawns and kings
-
-    if (!moves->Has(offset)) {
-      // Was not a legal move
-      return;
-    }
-
-    // Check for pins and such
+    // TODO: Special business for kings (mostly checking and check-mating)
 
     Piece* king = board.GetKing(selectedP->GetTypeAsString().color);
     unsigned int kingOffset = Util::OffsetFromRF(king->Rank(), king->File());
 
-    Bitmap pins = board.KingPins(king);
-    // TODO: COMPLICATED EN PASSANT PINS
+    /*if (board.KingChecked()) {
+      // Uh-oh king is checked!
+      // What to do... what to dooooooOoooOOOOOooOooooOOoOOOooOOOooOoo
+      // Either: king moves out, piece captures the checking piece, piece stands in the way of checking piece (king, rook, queen)
 
-    if (pins.Has(offsetSelected)) {
-      // Check if piece stays pinned (GOOD) or goes out of pin (BAD ILLEGAL MOVE)
+      // TODO: Flatten if statements (less branching)
 
-      // If the moveOffset is between the king and the pinner/the side of the board
-      // then the move is ok
+      if (!selectedP->Is(KING)) {
+        // King checks for checks already
+        Piece* checker = board.GetCheckingPiece();
+        unsigned int checkerOffset = Util::OffsetFromRF(checker->Rank(), checker->File());
 
-      int8_t Rd = ((king->Rank() - selectedRank == 0) ? 0 : ((king->Rank() - selectedRank < 0) ? 1 : -1));
-      int8_t Fd = ((king->File() - selectedFile == 0) ? 0 : ((king->File() - selectedFile < 0) ? 1 : -1));
+        if (checker->Is(KNIGHT) || checker->Is(PAWN)) {
+          if (offset != checkerOffset) {
+            // This move won't work
 
-      /*
-      IF R+F = 0 is antidiag
-      IF R+F = -2 or 2 is diag
-      IF R+F = -1 or 1 is rank/file
+            return;
+          }
+        } else {
+          if (offset != checkerOffset || !IN_BETWEEN[kingOffset][checkerOffset].Has(offset)) {
+            // This move won't work
 
-      IF R*F = 0 is rank/file
-      if R*F = -1 is antidiag
-      if R*F = 1 is diag
-
-      index = 0 is antidiag
-      index = 1 is diag
-      index = 2 is file
-      index = 3 is rank
-      */
-
-      int index;
-
-      if (Rd * Fd == 0) {
-        index = abs(Rd);
+            return;
+          }
+        }
       } else {
-        index = 2 + ((Rd * Fd + 1) / 2);
+        // King cannot move in the same line as a pin
+        Piece* checker = board.GetCheckingPiece();
+        unsigned int checkerOffset = Util::OffsetFromRF(checker->Rank(), checker->File());
+
+        if (checker->Is(ROOK)) {
+          if (FILE_OCCUPANCY[checkerOffset]["lineEx"].Or(RANK_OCCUPANCY[checkerOffset]["lineEx"]).Has(offset)) {
+            return;
+          }
+        } else if (checker->Is(BISHOP)) {
+          if (DIAGONAL_OCCUPANCY[checkerOffset]["lineEx"].Or(ANTIDIAGONAL_OCCUPANCY[checkerOffset]["lineEx"]).Has(offset)) {
+            return;
+          }
+        } else if (checker->Is(QUEEN)) {
+          if (FILE_OCCUPANCY[checkerOffset]["lineEx"].Or(RANK_OCCUPANCY[checkerOffset]["lineEx"]).Or(DIAGONAL_OCCUPANCY[checkerOffset]["lineEx"]).Or(ANTIDIAGONAL_OCCUPANCY[checkerOffset]["lineEx"]).Has(offset)) {
+            return;
+          }
+        }
       }
+    }*/
 
-      OutputDebugString(std::to_string(index).c_str());
-
-      BitmapCollection throughBms[4] = {FILE_OCCUPANCY[kingOffset], RANK_OCCUPANCY[kingOffset], ANTIDIAGONAL_OCCUPANCY[kingOffset], DIAGONAL_OCCUPANCY[kingOffset]};
-
-      if (!(throughBms[index]["lineEx"].Has(offset))) {
-        // Goes out of pin
-        return;
-      }
+    if (!moves->Has(offset)) {
+      // Was not a legal move
+      return;
     }
 
     board.MakeMove(selectedP, rank, file);

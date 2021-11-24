@@ -12,6 +12,14 @@ Board::Board() {
 
   turn = 0;
   hasSelected = false;
+
+  kingIsChecked = false;
+  isDoubleCheck = false;
+
+  hasKingPinCache = false;
+
+  checkRayAndPiece = Bitmap(0);
+
   selectedPiece = nullptr;
   hasLegalMovesCacheFor.Clear();
 
@@ -361,11 +369,51 @@ Bitmap* Board::GetAttacks(Piece* p) {
 }
 
 Bitmap* Board::GetMoves(Piece* p) {
+  // TODO:
+  // - Cache this, also cache the attacks
+  //
+
   unsigned int offset = Util::OffsetFromRF(p->Rank(), p->File());
   Bitmap* ret = new Bitmap();
 
+  std::string color        = p->Is(WHITE_PIECE) ? "white" : "black";
+  std::string inverseColor = p->Is(WHITE_PIECE) ? "black" : "white";
+
+  // Preparing for pin checks
+  Piece* king = GetKing(color);
+  Bitmap pinned = KingPins(king);
+
+  unsigned int kingOffset = Util::OffsetFromRF(king->Rank(), king->File());
+
   if (p->Is(PAWN)) {
     PawnMoves(p, ret);
+
+    if (!(ret->And(enPassantPawns).IsEmpty()) && !(RANK_OCCUPANCY[kingOffset]["lineEx"].And(1ULL << offset).IsEmpty())) {
+      // En passant capture exists on the same rank as the king, now check for double en-passant pins
+      Bitmap piecesEnPassantRemoved = pieces.All().Xor((p->Descriptor() & 1) ? enPassantPawns.Bits() >> 8 : enPassantPawns.Bits() << 8);
+      
+      Bitmap attacks = LineAttacks(&RANK_OCCUPANCY[kingOffset]);
+      attacks.XorPlace(LineAttacks(piecesEnPassantRemoved.Xor(pieces[color].And(attacks)), &RANK_OCCUPANCY[kingOffset]));
+
+      uint64_t pinner = attacks.And(PieceBitmap("rook", inverseColor)->Or(PieceBitmap("queen", inverseColor)).Bits()).Bits();
+
+      unsigned long index;
+      Bitmap pinned;
+
+      while (pinner) {
+        _BitScanForward64(&index, pinner);
+
+        Bitmap* piecesColor = PiecesBitmap(p->Descriptor() & 1);
+        Bitmap inBetweeners = IN_BETWEEN[index][kingOffset];
+
+        pinned.OrPlace(inBetweeners.And(piecesColor));
+        pinner &= pinner - 1;
+      }
+
+      if (pinned.Has(offset)) {
+        ret->XorPlace(enPassantPawns);
+      }
+    }
   } else if (p->Is(KNIGHT)) {
     KnightMoves(p, ret);
   } else if (p->Is(ROOK)) {
@@ -376,6 +424,51 @@ Bitmap* Board::GetMoves(Piece* p) {
     QueenMoves(p, ret);
   } else if (p->Is(KING)) {
     KingMoves(p, ret);
+  }
+
+  // IF double check -> only move possible is a king move
+  // If normal check -> Block/Capture
+
+  if (kingIsChecked) {
+    if (isDoubleCheck && !p->Is(KING)) {
+      ret->Clear();
+      return ret;
+    } else if (!p->Is(KING)){
+      ret->AndPlace(checkRayAndPiece);
+    } else {
+      // King cannot stay in the x-rayed line
+      int8_t Rd = ((king->Rank() - checkerPiece->Rank() == 0) ? 0 : ((king->Rank() - checkerPiece->Rank() < 0) ? 1 : -1));
+      int8_t Fd = ((king->File() - checkerPiece->File() == 0) ? 0 : ((king->File() - checkerPiece->File() < 0) ? 1 : -1));
+
+      unsigned int checkerOffset = Util::OffsetFromRF(checkerPiece->Rank(), checkerPiece->File());
+
+      int index = index = 2 + ((Rd * Fd + 1) / 2);
+
+      if (Rd * Fd == 0) {
+        index = abs(Rd);
+      }
+
+      BitmapCollection throughBms[4] = {FILE_OCCUPANCY[checkerOffset], RANK_OCCUPANCY[checkerOffset], ANTIDIAGONAL_OCCUPANCY[checkerOffset], DIAGONAL_OCCUPANCY[checkerOffset] };
+
+      ret->AndPlace(throughBms[index]["lineEx"].Inverse());
+    }
+  }
+
+  // If piece is pinned, only keep the moves on the same line
+  if (pinned.Has(offset)) {
+    // Piece is pinned
+    int8_t Rd = ((king->Rank() - p->Rank() == 0) ? 0 : ((king->Rank() - p->Rank() < 0) ? 1 : -1));
+    int8_t Fd = ((king->File() - p->File() == 0) ? 0 : ((king->File() - p->File() < 0) ? 1 : -1));
+
+    int index = index = 2 + ((Rd * Fd + 1) / 2);
+
+    if (Rd * Fd == 0) {
+      index = abs(Rd);
+    }
+
+    BitmapCollection throughBms[4] = {FILE_OCCUPANCY[offset], RANK_OCCUPANCY[offset], ANTIDIAGONAL_OCCUPANCY[offset], DIAGONAL_OCCUPANCY[offset]};
+
+    ret->AndPlace(throughBms[index]["lineEx"]);
   }
 
   return ret;
@@ -796,8 +889,16 @@ Bitmap* Board::PiecesBitmap(uint8_t color) {
   return &pieces[color ? "white" : "black"];
 }
 
+Bitmap* Board::PieceBitmap(std::string type, std::string color) {
+  return &piecesMap[type][color];
+}
+
 Bitmap* Board::PiecesBitmap() {
   return &pieces.All();
+}
+
+bool Board::HasEnPassantSquareAt(unsigned int offset) {
+  return enPassantPawns.Has(offset);
 }
 
 void Board::MakeMove(Piece* p, int rank, int file) {
@@ -859,14 +960,39 @@ void Board::MakeMove(Piece* p, int rank, int file) {
     }
   }
 
-  // TODO: Check for rook or king moves (to remove castling permissions)
+  if (p->Is(KING)) {
+    if ((oldFile - file == 2 && castleMap[(oldRank / 8) * 2 + 1]) || (oldFile - file == -2 && castleMap[(oldRank / 8) * 2])) {
+      // Castling
+
+      int leftOrRight = (oldFile - file) / 2; // -1 if left 1 if right
+      std::string color = (oldRank == 1) ? "white" : "black";
+
+      pieceAt[file - 1 + leftOrRight][rank - 1] = pieceAt[(7 - leftOrRight * 7) / 2][rank - 1];
+      pieceAt[(7 - leftOrRight * 7) / 2][rank - 1] = nullptr;
+
+      pieceAt[file - 1 + leftOrRight][rank - 1]->File(file + leftOrRight);
+      
+      piecesMap["rook"][color].Clear((oldRank - 1) * 8 + (7 - leftOrRight * 7) / 2);
+      piecesMap["rook"][color].Set(newOffset + leftOrRight);
+
+      pieces[color].Clear((oldRank - 1) * 8 + (7 - leftOrRight * 7) / 2);
+      pieces[color].Set(newOffset + leftOrRight);
+    }
+
+    castleMap[(oldRank / 8) * 2] = false;
+    castleMap[(oldRank / 8) * 2 + 1] = false;
+  }
+
+  if (p->Is(ROOK)) {
+    castleMap[(oldRank / 8)*2 + ((9 - oldFile) / 8)] = false;
+  }
 
   // Set pieces new file and rank
   p->Rank(rank);
   p->File(file);
 
   pieceAt[file-1][rank-1] = p;
-  pieceAt[oldFile][oldRank] = nullptr;
+  pieceAt[oldFile - 1][oldRank - 1] = nullptr;
 
   // Update bitmaps
   pieces[pieceName.color].Clear(oldOffset);
@@ -874,6 +1000,41 @@ void Board::MakeMove(Piece* p, int rank, int file) {
 
   piecesMap[pieceName.piece][pieceName.color].Clear(oldOffset);
   piecesMap[pieceName.piece][pieceName.color].Set(newOffset);
+
+  // Check if king is checked, also detect CHECKMATE
+  Piece* king = GetKing(pieceName.color == "white" ? "black" : "white");
+  unsigned int kingOffset = Util::OffsetFromRF(king->Rank(), king->File());
+
+  if (GetAttacksFromColor(p->Descriptor() & 1)->Has(kingOffset)) {
+    kingIsChecked = true;
+
+    uint64_t piecesNum = PiecesBitmap((king -> Descriptor() & 1) ^ 1) -> Bits();
+    unsigned long index;
+
+    bool hasOneCheck = false;
+
+    while (piecesNum > 0) {
+      _BitScanForward64(&index, piecesNum);
+
+      int rank = index / 8;
+      int file = index % 8;
+
+      if (GetAttacks(pieceAt[file][rank])->Has(kingOffset)) {
+        checkRayAndPiece = IN_BETWEEN[index][kingOffset];
+        checkRayAndPiece.Set(index);
+        checkerPiece = pieceAt[file][rank];
+
+        isDoubleCheck = hasOneCheck;
+        hasOneCheck = true;
+      }
+
+      piecesNum &= piecesNum - 1;
+    }
+
+  } else {
+    kingIsChecked = false;
+    isDoubleCheck = false;
+  }
 
   hasLegalMovesCacheFor.Clear();
 }
@@ -896,4 +1057,8 @@ bool Board::IsInBoundsAndCheckPiece(int rank, int file, bool wantsPiece) {
   }
 
   return true;
+}
+
+bool Board::KingChecked() {
+  return kingIsChecked;
 }
